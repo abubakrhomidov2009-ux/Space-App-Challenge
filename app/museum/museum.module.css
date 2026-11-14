@@ -128,7 +128,7 @@
   overflow: hidden;
   border-radius: 50%;
   background: var(--land);
-  color: #07080c;
+  color: #fff;
   box-shadow: 0 18px 44px #000d, 0 0 0 0 var(--halo);
   transition: transform .9s cubic-bezier(.2, .7, .2, 1), box-shadow .9s cubic-bezier(.2, .7, .2, 1);
   animation: worldArrive 1s cubic-bezier(.2, .7, .2, 1) backwards;
@@ -151,13 +151,17 @@
   inset: 0;
   z-index: -1;
   border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, transparent 0 26%, #05060a4d 54%, #05060a99 76%, #05060af2 100%);
+  background:
+    radial-gradient(circle at 32% 28%, transparent 0 26%, #05060a4d 54%, #05060a99 76%, #05060af2 100%),
+    #05060a42;
 }
 
 .nextDisc svg {
   width: 1.5rem;
   height: 1.5rem;
-  stroke-width: 1.7;
+  stroke-width: 1.8;
+  /* A soft dark halo keeps the arrow readable over light and dark terrain. */
+  filter: drop-shadow(0 0 3px #000b) drop-shadow(0 1px 2px #0009);
   transition: transform .7s cubic-bezier(.2, .7, .2, 1);
 }
 
