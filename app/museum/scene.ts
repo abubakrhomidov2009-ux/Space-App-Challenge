@@ -382,8 +382,12 @@ export function mountScene(
         const fade = own ? 1 : 1 - hubEase;
         const size = lerp(slot.r, radius * 0.92, grow) * (1 + 0.045 * hubHover[world]) * lerp(0.72, 1, show) * fade;
         const hubGroup = groups[world];
-        hubGroup.visible = show > 0.002 && fade > 0.002;
-        hubGroup.scale.setScalar(Math.max(size * (world === 'space' ? lerp(1.32, 0.77, grow) : 1), 0.001));
+        // A loaded world is drawn once at a vanishing size before it is shown. The first draw is when
+        // the GPU compiles its shaders and uploads its textures, which would otherwise stall the
+        // frame in which the worlds appear.
+        const warm = show <= 0.002 && Boolean(models[world]);
+        hubGroup.visible = warm || (show > 0.002 && fade > 0.002);
+        hubGroup.scale.setScalar(warm ? 0.001 : Math.max(size * (world === 'space' ? lerp(1.32, 0.77, grow) : 1), 0.001));
         hubGroup.position.set(
           lerp(slot.x, 0, grow) + (own ? 0 : slot.x * 0.3 * hubEase) - driftX * 8,
           lerp(slot.y, 0, grow) - driftY * 5 - (1 - show) * height * 0.04,

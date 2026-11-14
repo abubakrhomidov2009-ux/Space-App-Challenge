@@ -66,6 +66,8 @@
 }
 
 .header a:hover { background: var(--glass-hover); }
+/* A story's photograph runs edge to edge, so the page starts at the very top and clips the bleed. */
+.library:has(> article) { max-width: none; padding: 0 0 5rem; overflow-x: clip; }
 .library h1 { font-size: clamp(2.65rem, 8vw, 5.5rem); line-height: 1; margin: 2rem 0 .6rem; }
 .description { color: #bcbcc2; }
 

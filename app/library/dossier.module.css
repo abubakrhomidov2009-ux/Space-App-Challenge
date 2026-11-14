@@ -1,0 +1,135 @@
+/* Everything but the photograph sits in one centred column; the photograph takes the whole window. */
+.dossier { --pad: clamp(1rem, 5vw, 4rem); --column: min(78rem, calc(100% - 2 * var(--pad))); }
+
+/* The photograph runs the full width of the window and melts into the page at the bottom. */
+.hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: clamp(26rem, 74svh, 54rem);
+  padding-bottom: clamp(2.5rem, 7svh, 5rem);
+  overflow: hidden;
+}
+
+.photo {
+  object-fit: cover;
+  object-position: center 45%;
+  filter: saturate(.8) brightness(.72);
+  mask-image: linear-gradient(to bottom, black 55%, rgb(0 0 0 / .6) 78%, transparent);
+  animation: settle .85s cubic-bezier(.2, .7, .2, 1) both;
+}
+
+.heroText {
+  position: relative;
+  width: var(--column);
+  animation: rise .9s cubic-bezier(.2, .7, .2, 1) .25s both;
+}
+
+.place {
+  width: fit-content;
+  margin: 0 0 1.1rem;
+  padding: .45rem 1rem;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  color: #d6d6dc;
+  font-size: .95rem;
+}
+
+.heroText h1 {
+  margin: 0;
+  font-size: clamp(2.8rem, 9vw, 7.5rem);
+  line-height: .95;
+  letter-spacing: -.045em;
+  text-wrap: balance;
+}
+
+.credit {
+  position: absolute;
+  top: 5rem;
+  right: calc((100% - var(--column)) / 2);
+}
+
+/* The story reads in a narrow column; the facts stay in view beside it while it scrolls. */
+.body, .exhibit, .end { width: var(--column); margin-inline: auto; }
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 40rem) minmax(15rem, 20rem);
+  justify-content: space-between;
+  gap: 3rem clamp(2rem, 6vw, 6rem);
+  margin-top: 1rem;
+}
+
+.story { color: #d2d4de; font-size: clamp(1rem, .96rem + .3vw, 1.18rem); line-height: 1.7; }
+.story p { margin: 0 0 1.35em; }
+.story .lead { color: #fff; font-size: clamp(1.3rem, 1.1rem + 1vw, 1.8rem); line-height: 1.4; }
+
+.facts {
+  align-self: start;
+  position: sticky;
+  top: 5rem;
+  padding: 1.4rem 1.5rem;
+  border-radius: 1.4rem;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+}
+
+.facts dl { display: grid; gap: 1.1rem; margin: 0; }
+.facts dt { color: #a7a7ae; font-size: .85rem; }
+.facts dd { margin: .15rem 0 0; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+
+/* A route or a track is an exhibit of its own and takes the full width. */
+.exhibit { margin-top: clamp(2.5rem, 6vw, 5rem); }
+
+.end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-top: clamp(3rem, 7vw, 6rem);
+}
+
+.sources { display: flex; flex-wrap: wrap; gap: .7rem; margin: 0; }
+
+.next {
+  display: grid;
+  gap: .15rem;
+  padding: 1rem 1.6rem;
+  border-radius: 1.4rem;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  text-decoration: none;
+  transition: background .35s ease;
+}
+
+.next:hover { background: var(--glass-hover); }
+.next:focus-visible { outline: 2px solid rgb(255 255 255 / .6); outline-offset: 3px; }
+.next small { color: #a7a7ae; }
+.next span { font-size: 1.3rem; font-weight: 600; }
+
+@keyframes settle { from { transform: scale(1.07); opacity: .6; } }
+@keyframes rise { from { opacity: 0; transform: translateY(22px); } }
+@keyframes reveal { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+@keyframes drift { to { transform: translateY(9%); } }
+
+/* Where the browser can tie motion to scroll: the photo drifts slower than the page, and the
+   story, the facts and the next link rise into place as they arrive. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .photo { animation: settle .85s cubic-bezier(.2, .7, .2, 1) both, drift linear both; animation-timeline: auto, scroll(root); animation-range: normal, 0 80svh; }
+    .story p, .facts, .exhibit, .end { animation: reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+  }
+}
+
+@media (max-width: 860px) {
+  .body { grid-template-columns: minmax(0, 1fr); }
+  .facts { position: static; order: -1; }
+  .credit { top: 4.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo, .heroText { animation: none; }
+}

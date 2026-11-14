@@ -5,7 +5,7 @@ export const additionalMissions = {
     sources: {
       mission: 'https://science.nasa.gov/mission/surveyor-3/',
       coordinates: 'https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html',
-      photo: 'https://science.nasa.gov/mission/surveyor-3/',
+      photo: 'https://commons.wikimedia.org/wiki/File:Surveyor_3_Conrad.jpg',
     },
     copy: {
       ru: { name: 'Surveyor 3', location: 'Луна · Океан Бурь', intro: 'Робот с ковшом помог выяснить, выдержит ли лунный грунт вес пилотируемого аппарата.', story: [
@@ -28,7 +28,7 @@ export const additionalMissions = {
     sources: {
       mission: 'https://www.nasa.gov/missions/apollo/apollo-15-mission-details/',
       coordinates: 'https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html',
-      photo: 'https://eol.jsc.nasa.gov/SearchPhotos/photo.pl?frame=11901&mission=AS15&roll=88',
+      photo: 'https://commons.wikimedia.org/wiki/File:Apollo_15_flag,_rover,_LM,_Irwin.jpg',
     },
     copy: {
       ru: { name: 'Луноход Apollo 15', location: 'Луна · борозда Хэдли', intro: 'Первый автомобиль, на котором астронавты ездили по Луне.', story: [
@@ -74,7 +74,7 @@ export const additionalMissions = {
     sources: {
       mission: 'https://science.nasa.gov/wp-content/uploads/2023/09/DSC_monograph24.pdf',
       coordinates: 'https://ntrs.nasa.gov/api/citations/20260002020/downloads/NASA-TM20260002020.pdf',
-      photo: 'https://science.nasa.gov/resource/sojourner-yogi/',
+      photo: 'https://commons.wikimedia.org/wiki/File:Pathfinder_and_Sojourner_%2818647779303%29.jpg',
     },
     copy: {
       ru: { name: 'Pathfinder и Sojourner', location: 'Марс · долина Арес', intro: 'Pathfinder привёз на Марс Sojourner, первый колёсный аппарат на другой планете.', story: [
