@@ -22,3 +22,36 @@ button { font: inherit; cursor: pointer; }
 html { scrollbar-gutter: stable; }
 
 html:has(dialog[open]) { overflow: hidden; }
+
+.nav-arrow {
+  display: inline-block;
+  position: relative;
+  width: 1em;
+  height: 1em;
+  flex: 0 0 1em;
+  vertical-align: -.13em;
+}
+
+.nav-arrow::before,
+.nav-arrow::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+}
+
+.nav-arrow::before {
+  inset-inline: 8% 14%;
+  border-top: 2px solid currentColor;
+  transform: translateY(-50%);
+}
+
+.nav-arrow::after {
+  right: 12%;
+  width: .35em;
+  height: .35em;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.nav-arrow-left { transform: rotate(180deg); }

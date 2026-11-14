@@ -1,12 +1,16 @@
 'use client';
 
+import Link from 'next/link';
+import { useLanguage } from './use-language';
+import { libraryCopy } from '../library/labels';
 import Image from 'next/image';
 import { preload } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
 import type { Destination, SceneInput, SceneStatus } from './scene';
+import MobileMenu from './mobile-menu';
 import MissionDialog from './mission-dialog';
 import LanguageSettings from './language-settings';
-import { museumCopy, type Language } from './languages';
+import { museumCopy } from './languages';
 import { missionIds, missions, type MissionId } from './missions';
 import styles from './museum.module.css';
 
@@ -15,6 +19,9 @@ export default function Museum() {
   const [selectedMission, setSelectedMission] = useState<MissionId>('lunokhod');
   const dialog = useRef<HTMLDialogElement>(null);
   const rotation = useRef<HTMLDivElement>(null);
+  const [photoReady, setPhotoReady] = useState(false);
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const photoRequest = useRef<AbortController | null>(null);
   const [closing, setClosing] = useState(false);
   const sky = useRef<HTMLDivElement>(null);
   const explore = useRef<HTMLElement>(null);
@@ -24,33 +31,9 @@ export default function Museum() {
   const [destination, setDestination] = useState<Destination>('moon');
   const [status, setStatus] = useState<SceneStatus>({ moon: 'loading', mars: 'loading', earth: 'loading' });
   const [unavailable, setUnavailable] = useState(false);
-  const [language, setLanguage] = useState<Language>('ru');
+  const { language, changeLanguage } = useLanguage();
   const copy = museumCopy[language];
   const nextDestination = destination === 'moon' ? 'mars' : 'moon';
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('tmas-language');
-      if (saved === 'ru' || saved === 'en' || saved === 'tg') {
-        setLanguage(saved);
-        document.documentElement.lang = saved;
-      }
-    } catch {
-      // The selector still works with storage disabled.
-    }
-    return () => { document.documentElement.lang = 'ru'; };
-  }, []);
-
-  function changeLanguage(next: Language) {
-    setLanguage(next);
-    document.documentElement.lang = next;
-    try {
-      localStorage.setItem('tmas-language', next);
-    } catch {
-      // The selection still applies for this visit.
-    }
-
-  }
 
   useEffect(() => {
     const host = sky.current;
@@ -72,6 +55,7 @@ export default function Museum() {
     return () => {
       cancelled = true;
       cleanup?.();
+      photoRequest.current?.abort();
     };
   }, []);
 
@@ -81,14 +65,33 @@ export default function Museum() {
   }
 
   useEffect(() => {
+    if (status[destination] === 'loading') return;
     for (const mission of Object.values(missions)) {
-      if (mission.world === destination) preload(mission.image, { as: 'image' });
+      if (mission.world === destination) preload(mission.image, { as: 'image', fetchPriority: 'low' });
     }
-  }, [destination]);
+  }, [destination, status]);
 
   function openMission(id: MissionId) {
     if (!dialog.current || dialog.current.open) return;
+    const request = new AbortController();
+    photoRequest.current = request;
     setSelectedMission(id);
+    setPhotoReady(false);
+    setPhotoFailed(false);
+    const photo = new window.Image();
+    photo.src = missions[id].image;
+    const timeout = window.setTimeout(() => reveal(false), 8000);
+
+    function reveal(loaded: boolean) {
+      window.clearTimeout(timeout);
+      if (request.signal.aborted) return;
+      request.abort();
+      setPhotoFailed(!loaded);
+      setPhotoReady(true);
+    }
+
+    request.signal.addEventListener('abort', () => window.clearTimeout(timeout), { once: true });
+    void photo.decode().then(() => reveal(true), () => reveal(false));
     input.current.mission = id;
     dialog.current.showModal();
   }
@@ -104,6 +107,7 @@ export default function Museum() {
 
   function closeMission() {
     if (closing) return;
+    photoRequest.current?.abort();
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       finishMission();
       return;
@@ -122,8 +126,12 @@ export default function Museum() {
 
   return (
     <main className={styles.museum}>
-      <LanguageSettings language={language} onChange={changeLanguage} />
-      <MissionDialog mission={missions[selectedMission]} language={language} onLanguageChange={changeLanguage} dialog={dialog} closing={closing} onClose={closeMission} onReveal={() => { input.current.missionCovered = true; }} onExit={finishMission} />
+      <header className={styles.heroNav}>
+        <Link className={styles.desktopLibrary} href="/library" prefetch={false}>{libraryCopy[language].title}</Link>
+        <MobileMenu language={language} />
+        <LanguageSettings language={language} onChange={changeLanguage} />
+      </header>
+      <MissionDialog photoReady={photoReady} photoFailed={photoFailed} mission={missions[selectedMission]} language={language} onLanguageChange={changeLanguage} dialog={dialog} closing={closing} onClose={closeMission} onReveal={() => { input.current.missionCovered = true; }} onExit={finishMission} />
       {missionIds.map((id) => {
         const name = missions[id].copy[language].name;
         return (
@@ -138,7 +146,7 @@ export default function Museum() {
       })}
       <div ref={sky} className={styles.sky} aria-hidden="true" />
       <section className={styles.hero} aria-labelledby="museum-title">
-        <Image className={styles.logo} src="/tmas-logo.jpg" width={480} height={480} priority
+        <Image className={styles.logo} src="/tmas-logo.jpg" width={480} height={480} preload
           alt="TMAS — Museum of Abandoned Space" />
         <h1 id="museum-title">{copy.title}</h1>
         <p>{copy.intro}</p>
@@ -175,7 +183,7 @@ export default function Museum() {
             input.current.destination = nextDestination;
             setDestination(nextDestination);
           }} aria-label={`${copy.show} · ${copy[nextDestination]}`}>
-            <span aria-hidden="true">→</span>
+            <span><i className="nav-arrow" aria-hidden="true" /></span>
           </button>
           <p className={styles.hint} role="status">{message}</p>
         </div>

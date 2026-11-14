@@ -9,7 +9,6 @@ type ModelStatus = 'loading' | 'ready' | 'error';
 export type SceneStatus = Record<World, ModelStatus>;
 export type SceneInput = { destination: Destination; moon: number; mars: number; dragging: boolean; resumeAt: number; mission: MissionId | null; missionCovered: boolean };
 
-const worlds = ['moon', 'mars', 'earth'] as const;
 const { lerp, smoothstep, damp } = THREE.MathUtils;
 
 function createStars() {
@@ -92,15 +91,22 @@ export function mountScene(
   );
   groups.earth.add(atmosphere);
   const models: Partial<Record<World, THREE.Group>> = {};
-  const pendingUpgrades: Partial<Record<World, THREE.Group>> = {};
   const loading = new Set<World>();
   const loader = new GLTFLoader();
-  const desktop = window.matchMedia('(min-width: 800px) and (pointer: fine)');
+  const requests = new AbortController();
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let disposed = false;
 
-  async function load(world: World, quality: '1k' | '4k') {
-    const { scene: asset } = await loader.loadAsync(`/models/${world}-${quality}.glb`);
+  async function load(world: World) {
+    const response = await fetch(`/models/${world}-1k.glb`, {
+      mode: 'cors',
+      priority: 'high',
+      signal: requests.signal,
+    });
+    if (!response.ok) throw new Error(`Model request failed: ${response.status}`);
+    const bytes = await response.arrayBuffer();
+    if (disposed) return;
+    const { scene: asset } = await loader.parseAsync(bytes, '/models/');
     if (disposed) {
       disposeModel(asset);
       return;
@@ -119,41 +125,17 @@ export function mountScene(
     }
 
     const normalized = normalizeModel(asset);
-    if (quality === '4k' && models[world]) {
-      pendingUpgrades[world] = normalized;
-      return;
-    }
-    installModel(world, normalized);
-  }
-
-  function installModel(world: World, normalized: THREE.Group) {
-    const previous = models[world];
     groups[world].add(normalized);
     models[world] = normalized;
-    if (previous) {
-      groups[world].remove(previous);
-      disposeModel(previous);
-    }
-    if (!previous) onStatus(world, 'ready');
+    onStatus(world, 'ready');
   }
 
   function ensure(world: World) {
     if (loading.has(world)) return;
     loading.add(world);
-    void (async () => {
-      try {
-        await load(world, '1k');
-      } catch {
-        if (!disposed && !desktop.matches) onStatus(world, 'error');
-      }
-      if (disposed || !desktop.matches) return;
-
-      try {
-        await load(world, '4k');
-      } catch {
-        if (!disposed && !models[world]) onStatus(world, 'error');
-      }
-    })();
+    void load(world).catch(() => {
+      if (!disposed) onStatus(world, 'error');
+    });
   }
 
   let width = 1;
@@ -215,16 +197,7 @@ export function mountScene(
     lastFrame = time;
     if (input.missionCovered) return;
 
-    if (!input.mission && !input.dragging && zoom < 0.03 && time >= input.resumeAt) {
-      for (const world of worlds) {
-        const upgrade = pendingUpgrades[world];
-        if (!upgrade) continue;
-        installModel(world, upgrade);
-        delete pendingUpgrades[world];
-        break;
-      }
-    }
-    if (input.destination === 'mars' || exploreTop < height * 0.6) ensure('mars');
+    if (input.destination === 'mars' || (models.moon && exploreTop < height * 0.6)) ensure('mars');
     if (finaleTop < height * 1.1) ensure('earth');
 
     const still = reduced.matches;
@@ -323,12 +296,12 @@ export function mountScene(
 
   return () => {
     disposed = true;
+    requests.abort();
     window.removeEventListener('scroll', measureScroll);
     window.removeEventListener('resize', measureScroll);
     resize.disconnect();
     renderer.setAnimationLoop(null);
     for (const model of Object.values(models)) disposeModel(model);
-    for (const model of Object.values(pendingUpgrades)) disposeModel(model);
     atmosphere.geometry.dispose();
     atmosphere.material.dispose();
     stars.geometry.dispose();

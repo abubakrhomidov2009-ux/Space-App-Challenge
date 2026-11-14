@@ -5,8 +5,8 @@ const marsCoordinates = 'https://www-robotics.jpl.nasa.gov/media/documents/05per
 
 export const missions = {
   ...additionalMissions,
-  lunokhod: { ...lunokhod, world: 'moon', image: '/lunokhod-1.webp', imageKind: 'model', siteKind: 'position' },
-  apollo: {
+  lunokhod: { kind: 'rover', ...lunokhod, world: 'moon', image: '/lunokhod-1.webp', imageKind: 'model', siteKind: 'position' },
+  apollo: { kind: 'lander',
     world: 'moon', latitude: 0.67409, longitude: 23.47298,
     image: '/apollo.webp', imageKind: 'archive', siteKind: 'position',
     sources: {
@@ -29,7 +29,7 @@ export const missions = {
       ] },
     },
   },
-  spirit: {
+  spirit: { kind: 'rover',
     world: 'mars', latitude: -14.5692, longitude: 175.4729,
     image: '/spirit.webp', imageKind: 'illustration', siteKind: 'landing',
     sources: {
@@ -51,7 +51,7 @@ export const missions = {
       ] },
     },
   },
-  opportunity: {
+  opportunity: { kind: 'rover',
     world: 'mars', latitude: -1.9462, longitude: 354.4734,
     image: '/opportunity.webp', imageKind: 'illustration', siteKind: 'landing',
     sources: {
