@@ -7,7 +7,7 @@ export type Destination = 'moon' | 'mars';
 type World = Destination | 'earth';
 type ModelStatus = 'loading' | 'ready' | 'error';
 export type SceneStatus = Record<World, ModelStatus>;
-export type SceneInput = { destination: Destination; moon: number; mars: number; dragging: boolean; resumeAt: number; mission: MissionId | null; missionCovered: boolean };
+export type SceneInput = { destination: Destination; moon: number; mars: number; dragging: boolean; hovering: boolean; resumeAt: number; mission: MissionId | null; missionCovered: boolean };
 
 const worlds = ['moon', 'mars', 'earth'] as const;
 const { lerp, smoothstep, damp } = THREE.MathUtils;
@@ -186,6 +186,8 @@ export function mountScene(
   let displayed: Destination = 'moon';
   const handoff = { moon: 0, mars: 0 };
   let zoom = 0;
+  // Share of the idle spin speed. Eases to 0 over a point and back to 1 after.
+  let spin = 1;
   let zoomedMission: MissionId = 'lunokhod';
   const sites = missionIds.map((id) => {
     const mission = missions[id];
@@ -215,7 +217,7 @@ export function mountScene(
     lastFrame = time;
     if (input.missionCovered) return;
 
-    if (!input.mission && !input.dragging && zoom < 0.03 && time >= input.resumeAt) {
+    if (!input.mission && !input.dragging && !input.hovering && zoom < 0.03 && time >= input.resumeAt) {
       for (const world of worlds) {
         const upgrade = pendingUpgrades[world];
         if (!upgrade) continue;
@@ -241,6 +243,7 @@ export function mountScene(
     const radius = Math.min(width * 0.49, height * 0.48);
     const horizonRadius = Math.max(width * 0.66, height * 0.59);
 
+    spin = still ? 0 : damp(spin, input.hovering ? 0 : 1, input.hovering ? 3 : 1.6, dt);
     for (const world of ['moon', 'mars'] as const) {
       const active = displayed === world;
       handoff[world] = still ? Number(active) : damp(handoff[world], Number(active), 4.5, dt);
@@ -255,7 +258,7 @@ export function mountScene(
         -850 * (1 - prominence) - 900 * departure,
       );
       if (active && group.visible && !still && !input.dragging && !input.mission && zoom < 0.03 && time >= input.resumeAt) {
-        input[world] -= dt * 0.085;
+        input[world] -= dt * 0.085 * spin;
       }
       // Start each frame from the browsing pose, including zero roll.
       // Slerping toward a mission can change all three Euler angles.
@@ -277,8 +280,9 @@ export function mountScene(
         && input.destination === world && arrival > 0.95 && departure < 0.06
         && site.z - globeCenter.z > group.scale.x * 0.2 && !input.mission && zoom < 0.03);
       if (!marker.hidden) {
-        marker.style.left = `${width / 2 + site.x}px`;
-        marker.style.top = `${height / 2 - site.y}px`;
+        // A compositor-driven translate keeps sub-pixel motion smooth,
+        // unlike left/top, which re-lays out the marker every frame.
+        marker.style.translate = `${width / 2 + site.x}px ${height / 2 - site.y}px`;
       }
     }
 

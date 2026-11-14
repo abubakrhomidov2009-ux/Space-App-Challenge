@@ -157,6 +157,9 @@
 
 .marker {
   position: fixed;
+  top: 0;
+  left: 0;
+  will-change: translate;
   z-index: 4;
   display: grid;
   place-items: center;

@@ -19,7 +19,7 @@ export default function Museum() {
   const sky = useRef<HTMLDivElement>(null);
   const explore = useRef<HTMLElement>(null);
   const finale = useRef<HTMLElement>(null);
-  const input = useRef<SceneInput>({ destination: 'moon', moon: 0, mars: Math.PI * 0.43, dragging: false, resumeAt: 0, mission: null, missionCovered: false });
+  const input = useRef<SceneInput>({ destination: 'moon', moon: 0, mars: Math.PI * 0.43, dragging: false, hovering: false, resumeAt: 0, mission: null, missionCovered: false });
   const drag = useRef<{ id: number; x: number } | null>(null);
   const [destination, setDestination] = useState<Destination>('moon');
   const [status, setStatus] = useState<SceneStatus>({ moon: 'loading', mars: 'loading', earth: 'loading' });
@@ -86,9 +86,31 @@ export default function Museum() {
     }
   }, [destination]);
 
+  // Pause the idle spin while a point is under the pointer or focused,
+  // so the target stays still long enough to be clicked.
+  // The release is delayed: while the globe coasts to a stop the point can
+  // drift out from under the cursor and back, and that must not restart the spin.
+  const releaseTimer = useRef<number>(0);
+
+  function holdRotation() {
+    window.clearTimeout(releaseTimer.current);
+    input.current.hovering = true;
+  }
+
+  function releaseRotation() {
+    window.clearTimeout(releaseTimer.current);
+    releaseTimer.current = window.setTimeout(() => {
+      input.current.hovering = false;
+      input.current.resumeAt = performance.now() + 400;
+    }, 350);
+  }
+
   function openMission(id: MissionId) {
     if (!dialog.current || dialog.current.open) return;
     setSelectedMission(id);
+    // The marker hides on open, so its pointerleave may never fire.
+    window.clearTimeout(releaseTimer.current);
+    input.current.hovering = false;
     input.current.mission = id;
     dialog.current.showModal();
   }
@@ -130,7 +152,9 @@ export default function Museum() {
           <button key={id} ref={(element) => {
             if (element) markers.current[id] = element;
             else delete markers.current[id];
-          }} hidden className={styles.marker} onClick={() => openMission(id)} aria-label={name}>
+          }} hidden className={styles.marker} onClick={() => openMission(id)} aria-label={name}
+            onPointerEnter={holdRotation} onPointerLeave={releaseRotation}
+            onFocus={holdRotation} onBlur={releaseRotation}>
             <span className={styles.markerCore} aria-hidden="true" />
             <span className={styles.markerName} aria-hidden="true">{name}</span>
           </button>
