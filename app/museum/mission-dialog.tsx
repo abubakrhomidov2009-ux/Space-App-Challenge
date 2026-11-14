@@ -1,17 +1,18 @@
 'use client';
 
-import Image from 'next/image';
-import type { RefObject } from 'react';
+import MissionContent from './mission-content';
+import { useState, type RefObject } from 'react';
 import { museumCopy, type Language } from './languages';
 import LanguageSettings from './language-settings';
 import type { missions, MissionId } from './missions';
 import RouteMap from './route-map';
-import SourceLink from './source-link';
 import TrackMap from './track-map';
 import { isWideRoute, type Route, type Track } from './routes';
 import styles from './museum.module.css';
 
 export default function MissionDialog({
+  photoReady,
+  photoFailed,
   mission,
   route,
   routeSource,
@@ -28,6 +29,8 @@ export default function MissionDialog({
   onExit,
   onReveal,
 }: {
+  photoReady: boolean;
+  photoFailed: boolean;
   mission: typeof missions[MissionId];
   route?: Route;
   routeSource?: string;
@@ -44,19 +47,21 @@ export default function MissionDialog({
   onExit: () => void;
   onReveal: () => void;
 }) {
-  const copy = mission.copy[language];
+  const [fogClosed, setFogClosed] = useState(false);
   const labels = museumCopy[language];
 
   return (
-    <dialog ref={dialog} className={styles.mission} data-closing={closing} tabIndex={-1}
+    <dialog ref={dialog} className={styles.mission} data-closing={closing} data-revealing={photoReady && fogClosed} tabIndex={-1}
       aria-labelledby="mission-title" onCancel={(event) => {
         event.preventDefault();
         onClose();
       }}>
       <div className={styles.missionPanel} data-route={Boolean(route || track)} data-wide={Boolean(route && isWideRoute(route))} data-world={mission.world} onAnimationEnd={(event) => {
         if (event.target !== event.currentTarget) return;
-        if (closing) onExit();
-        else onReveal();
+        if (closing) {
+          setFogClosed(false);
+          onExit();
+        }
       }}>
         <button className={styles.missionBack} onClick={onClose}>
           <svg className={styles.missionBackIcon} viewBox="0 0 16 16" fill="none" stroke="currentColor"
@@ -66,34 +71,25 @@ export default function MissionDialog({
           {labels.back}
         </button>
         <LanguageSettings language={language} onChange={onLanguageChange} />
-        <figure className={styles.missionPhoto} data-world={mission.world}>
-          <Image src={mission.image} fill unoptimized
-            alt={mission.imageKind === 'model' ? labels.photoAlt : copy.name} />
-          <figcaption>
-            <SourceLink href={mission.sources.photo}>{mission.imageKind === 'model' ? labels.photo : labels[mission.imageKind]}</SourceLink>
-          </figcaption>
-        </figure>
-        <article className={styles.missionCopy}>
-          <p className={styles.missionLocation}>{copy.location}</p>
-          <h2 id="mission-title">{copy.name}</h2>
-          <p className={styles.missionIntro}>{copy.intro}</p>
-          {copy.story.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-          <p className={styles.missionSources}>
-            <SourceLink href={mission.sources.mission}>{labels.mission}</SourceLink>
-            <SourceLink href={mission.sources.coordinates}>{mission.siteKind === 'landing' ? labels.landing : labels.coordinates}</SourceLink>
-          </p>
-        </article>
-        {track && (
-          <TrackMap track={track} language={language} playKey={routeRun} world={mission.world}
-            sourceUrl={trackSource} lroKm={trackLroKm}
-            lroSource={'distance' in mission.sources ? mission.sources.distance : undefined} />
-        )}
-        {route && (
-          <RouteMap route={route} language={language} playKey={routeRun}
-            world={mission.world} sourceUrl={routeSource} odometerSource={odometerSource} />
-        )}
+        <MissionContent mission={mission} language={language} photoFailed={photoFailed}>
+          {track && (
+            <TrackMap track={track} language={language} playKey={routeRun} world={mission.world as 'moon' | 'mars'}
+              sourceUrl={trackSource} lroKm={trackLroKm}
+              lroSource={'distance' in mission.sources ? mission.sources.distance : undefined} />
+          )}
+          {route && (
+            <RouteMap route={route} language={language} playKey={routeRun}
+              world={mission.world as 'moon' | 'mars'} sourceUrl={routeSource} odometerSource={odometerSource} />
+          )}
+        </MissionContent>
       </div>
-      <div key={closing ? 'closing' : 'opening'} className={styles.missionFog} data-fog={mission.world} aria-hidden="true" />
+      <div key={closing ? 'closing' : 'opening'} className={styles.missionFog} data-fog={mission.world} aria-hidden="true"
+        onAnimationEnd={(event) => {
+          if (!closing && event.target === event.currentTarget && !event.nativeEvent.pseudoElement) {
+            setFogClosed(true);
+            onReveal();
+          }
+        }} />
     </dialog>
   );
 }

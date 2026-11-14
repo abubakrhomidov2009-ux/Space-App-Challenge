@@ -1,0 +1,205 @@
+.library {
+  --gutter: clamp(1rem, 5vw, 4rem);
+  max-width: 78rem;
+  margin: auto;
+  padding: 1rem var(--gutter) 4rem;
+}
+
+.header { min-height: 3rem; display: flex; align-items: center; padding-right: 3.5rem; }
+.header a { text-underline-offset: .25em; }
+.library h1 { font-size: clamp(2.65rem, 8vw, 5.5rem); line-height: 1; margin: 2rem 0 .6rem; }
+.description { color: #c2c5ce; }
+.filters { display: grid; grid-template-columns: 2fr 1fr; gap: .75rem; margin-top: 2rem; }
+.filters label { display: grid; gap: .35rem; min-width: 0; }
+.filters input, .filters select, .reset {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: .55rem .7rem;
+  border: 1px solid #434650;
+  border-radius: .45rem;
+  background: #14161d;
+  color: inherit;
+  font: inherit;
+}
+.reset { width: auto; }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; padding: 0; list-style: none; }
+.cards a {
+  display: block;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid #30333c;
+  border-radius: .65rem;
+  background: #101116;
+  text-decoration: none;
+}
+.cards a:hover { border-color: #a6b5cf; }
+.cover { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: .6rem .6rem 0 0; }
+.cover img { object-fit: cover; }
+.cardCopy { padding: 1rem; }
+.cardCopy h2 { margin: .35rem 0; font-size: 1.5rem; line-height: 1.13; }
+.cardCopy p { margin: 0; color: #c2c5ce; }
+.cardCopy p:first-child { font-size: .82rem; }
+.detail { display: grid; grid-template-columns: 1fr 1fr; margin-top: 1rem; background: #0b0c10; }
+
+@media (max-width: 900px) {
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .detail { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .filters { grid-template-columns: 1fr; }
+  .cards { grid-template-columns: 1fr; }
+}
+
+.categories {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 0;
+  margin: 2rem 0 0;
+  list-style: none;
+}
+
+.category {
+  position: relative;
+  display: flex;
+  align-items: end;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid #3c404a;
+  border-radius: .7rem;
+  background: #09090c;
+  text-decoration: none;
+}
+
+.category img {
+  z-index: -2;
+  object-fit: cover;
+}
+
+.category[data-category='space'] img { object-fit: cover; }
+
+.category::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(0deg, #07080c 0%, transparent 68%);
+}
+
+.category > span {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: clamp(1rem, 3vw, 2rem);
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  font-weight: 700;
+}
+
+.category:hover { border-color: #b7c4db; }
+
+@media (max-width: 740px) {
+  .categories { grid-template-columns: 1fr; }
+  .category { aspect-ratio: 16 / 9; }
+}
+
+.globePage {
+  min-height: 100svh;
+  background: #060608;
+}
+
+.globeHeader {
+  position: absolute;
+  z-index: 5;
+  top: max(.75rem, env(safe-area-inset-top));
+  left: max(.75rem, env(safe-area-inset-left));
+}
+
+.globeHeader a {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 2.75rem;
+  padding-inline: .75rem;
+  text-decoration: none;
+  text-shadow: 0 1px 7px #000;
+}
+
+.globe {
+  position: relative;
+  isolation: isolate;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.globeCanvas,
+.globeDrag {
+  position: absolute;
+  inset: 0;
+}
+
+.globeCanvas canvas { display: block; }
+.globeDrag { touch-action: pan-y; cursor: grab; }
+.globeDrag:active { cursor: grabbing; }
+.globeDrag:focus-visible { outline-offset: -4px; }
+.globe .globeMarker { position: absolute; }
+
+.globe button.previousWorld,
+.globe button.nextWorld {
+  z-index: 5;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+.globe button.previousWorld { right: auto; left: max(.75rem, env(safe-area-inset-left)); }
+.globe button.nextWorld { right: max(.75rem, env(safe-area-inset-right)); }
+
+/* World-switch buttons here move between three worlds, so they stay plain round arrows. */
+.globe button.previousWorld span,
+.globe button.nextWorld span {
+  display: grid;
+  width: 3.25rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background: #09090dcc;
+  font-size: 1.45rem;
+  transition: background-color .25s ease, color .25s ease;
+}
+
+.globe button.previousWorld:hover span,
+.globe button.nextWorld:hover span,
+.globe button.previousWorld:focus-visible span,
+.globe button.nextWorld:focus-visible span { background: #f4f4f5; color: #070709; }
+
+.globeStatus {
+  position: absolute;
+  inset: auto 4rem max(1rem, env(safe-area-inset-bottom));
+  margin: 0;
+  text-align: center;
+  text-shadow: 0 1px 7px #000;
+  pointer-events: none;
+}
+
+@media (max-width: 740px) {
+  .globe button.previousWorld,
+  .globe button.nextWorld {
+    top: auto;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    transform: none;
+  }
+}
+
+.globePage { --gutter: clamp(1rem, 5vw, 4rem); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .library { animation: libraryEnter 250ms ease-out both; }
+}
+
+@keyframes libraryEnter {
+  from { opacity: .25; }
+  to { opacity: 1; }
+}

@@ -1,15 +1,15 @@
-import { missionIds, missions, type MissionId } from './missions';
+import { globeMissionIds, missions, orbitExhibits, type MissionId } from './missions';
 import * as THREE from 'three';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { disposeModel, normalizeModel } from './models';
 
-export type Destination = 'moon' | 'mars';
+export type Destination = 'moon' | 'mars' | 'space';
 type World = Destination | 'earth';
 type ModelStatus = 'loading' | 'ready' | 'error';
 export type SceneStatus = Record<World, ModelStatus>;
-export type SceneInput = { destination: Destination; moon: number; mars: number; dragging: boolean; hovering: boolean; resumeAt: number; mission: MissionId | null; missionCovered: boolean };
+export type SceneInput = { destination: Destination; moon: number; mars: number; space: number; dragging: boolean; hovering: boolean; resumeAt: number; mission: MissionId | null; missionCovered: boolean; switchDirection?: -1 | 1 };
 
-const worlds = ['moon', 'mars', 'earth'] as const;
 const { lerp, smoothstep, damp } = THREE.MathUtils;
 
 function createStars() {
@@ -38,12 +38,13 @@ function createStars() {
 
 export function mountScene(
   host: HTMLDivElement,
-  explore: HTMLElement,
-  finale: HTMLElement,
+  explore: HTMLElement | null,
+  finale: HTMLElement | null,
   input: SceneInput,
   markers: Partial<Record<MissionId, HTMLButtonElement>>,
   onStatus: (world: World, status: ModelStatus) => void,
 ) {
+  const standalone = explore === null;
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.matchMedia('(pointer: coarse)').matches ? 1.25 : 1.75));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -64,7 +65,7 @@ export function mountScene(
   const fill = new THREE.AmbientLight('#dde5fb', 0.14);
   scene.add(stars, key, rim, fill);
 
-  const groups = { moon: new THREE.Group(), mars: new THREE.Group(), earth: new THREE.Group() };
+  const groups = { moon: new THREE.Group(), mars: new THREE.Group(), earth: new THREE.Group(), space: new THREE.Group() };
   scene.add(...Object.values(groups));
 
   const atmosphere = new THREE.Mesh(
@@ -92,15 +93,25 @@ export function mountScene(
   );
   groups.earth.add(atmosphere);
   const models: Partial<Record<World, THREE.Group>> = {};
-  const pendingUpgrades: Partial<Record<World, THREE.Group>> = {};
   const loading = new Set<World>();
   const loader = new GLTFLoader();
-  const desktop = window.matchMedia('(min-width: 800px) and (pointer: fine)');
+  const draco = new DRACOLoader().setDecoderPath('/draco/').setWorkerLimit(1);
+
+  const requests = new AbortController();
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let disposed = false;
 
-  async function load(world: World, quality: '1k' | '4k') {
-    const { scene: asset } = await loader.loadAsync(`/models/${world}-${quality}.glb`);
+  async function load(world: World) {
+    const response = await fetch(world === 'space' ? '/models/hubble.glb' : `/models/${world}-1k.glb`, {
+      mode: 'cors',
+      priority: 'high',
+      signal: requests.signal,
+    });
+    if (!response.ok) throw new Error(`Model request failed: ${response.status}`);
+    const bytes = await response.arrayBuffer();
+    if (disposed) return;
+    if (world === 'space') loader.setDRACOLoader(draco);
+    const { scene: asset } = await loader.parseAsync(bytes, '/models/');
     if (disposed) {
       disposeModel(asset);
       return;
@@ -119,41 +130,29 @@ export function mountScene(
     }
 
     const normalized = normalizeModel(asset);
-    if (quality === '4k' && models[world]) {
-      pendingUpgrades[world] = normalized;
-      return;
+    if (world === 'space') {
+      for (const [index, exhibit] of orbitExhibits.entries()) {
+        const telescope = new THREE.Group();
+        telescope.position.fromArray(exhibit.position);
+        telescope.scale.setScalar(0.11);
+        telescope.rotation.set(0.32, -0.4, index % 2 === 0 ? -0.28 : 0.36);
+        // Clones share geometry and materials. The original owns their disposal.
+        telescope.add(normalized.clone());
+        groups.space.add(telescope);
+      }
+    } else {
+      groups[world].add(normalized);
     }
-    installModel(world, normalized);
-  }
-
-  function installModel(world: World, normalized: THREE.Group) {
-    const previous = models[world];
-    groups[world].add(normalized);
     models[world] = normalized;
-    if (previous) {
-      groups[world].remove(previous);
-      disposeModel(previous);
-    }
-    if (!previous) onStatus(world, 'ready');
+    onStatus(world, 'ready');
   }
 
   function ensure(world: World) {
     if (loading.has(world)) return;
     loading.add(world);
-    void (async () => {
-      try {
-        await load(world, '1k');
-      } catch {
-        if (!disposed && !desktop.matches) onStatus(world, 'error');
-      }
-      if (disposed || !desktop.matches) return;
-
-      try {
-        await load(world, '4k');
-      } catch {
-        if (!disposed && !models[world]) onStatus(world, 'error');
-      }
-    })();
+    void load(world).catch(() => {
+      if (!disposed) onStatus(world, 'error');
+    });
   }
 
   let width = 1;
@@ -173,8 +172,8 @@ export function mountScene(
   let exploreTop = 0;
   let finaleTop = 0;
   function measureScroll() {
-    exploreTop = explore.getBoundingClientRect().top;
-    finaleTop = finale.getBoundingClientRect().top;
+    exploreTop = explore?.getBoundingClientRect().top ?? 0;
+    finaleTop = finale?.getBoundingClientRect().top ?? Infinity;
   }
   measureScroll();
   window.addEventListener('scroll', measureScroll, { passive: true });
@@ -183,14 +182,19 @@ export function mountScene(
   let lastFrame = 0;
   let scroll = 1 - exploreTop / window.innerHeight;
   let ending = finaleTop / window.innerHeight;
-  let displayed: Destination = 'moon';
-  const handoff = { moon: 0, mars: 0 };
+  let displayed = input.destination;
+  let slideDirection = 1;
+  const handoff = { moon: 0, mars: 0, space: 0 };
   let zoom = 0;
   // Share of the idle spin speed. Eases to 0 over a point and back to 1 after.
   let spin = 1;
   let zoomedMission: MissionId = 'lunokhod';
-  const sites = missionIds.map((id) => {
+  const sites = globeMissionIds.map((id) => {
     const mission = missions[id];
+    if (mission.world === 'space') {
+      const exhibit = orbitExhibits.find((entry) => entry.id === id)!;
+      return { id, world: mission.world, point: new THREE.Vector3().fromArray(exhibit.position) };
+    }
     const latitude = THREE.MathUtils.degToRad(mission.latitude);
     // The Mars GLB puts the centre of its map 72° west of the model's +Z axis.
     const longitude = THREE.MathUtils.degToRad(mission.longitude - (mission.world === 'mars' ? 72 : 0));
@@ -210,33 +214,29 @@ export function mountScene(
   const viewDirection = new THREE.Vector3(0, 0, 1);
   const turnToFront = new THREE.Quaternion();
   const facingRotation = new THREE.Quaternion();
-  ensure('moon');
+  ensure(input.destination);
 
   renderer.setAnimationLoop((time) => {
     const dt = Math.min(0.05, (time - lastFrame) / 1000);
     lastFrame = time;
     if (input.missionCovered) return;
 
-    if (!input.mission && !input.dragging && !input.hovering && zoom < 0.03 && time >= input.resumeAt) {
-      for (const world of worlds) {
-        const upgrade = pendingUpgrades[world];
-        if (!upgrade) continue;
-        installModel(world, upgrade);
-        delete pendingUpgrades[world];
-        break;
-      }
-    }
-    if (input.destination === 'mars' || exploreTop < height * 0.6) ensure('mars');
+    ensure(input.destination);
+    if (standalone && input.destination === 'space') ensure('earth');
+    if (!standalone && models.moon && exploreTop < height * 0.6) ensure('mars');
     if (finaleTop < height * 1.1) ensure('earth');
 
     const still = reduced.matches;
     const scrollTarget = 1 - exploreTop / height;
     const endingTarget = finaleTop / height;
     scroll = still ? scrollTarget : damp(scroll, scrollTarget, 11, dt);
-    ending = still ? endingTarget : damp(ending, endingTarget, 11, dt);
-    if (models[input.destination]) displayed = input.destination;
+    ending = standalone ? 2 : still ? endingTarget : damp(ending, endingTarget, 11, dt);
+    if (models[input.destination] && displayed !== input.destination) {
+      slideDirection = input.switchDirection ?? 1;
+      displayed = input.destination;
+    }
 
-    const arrival = still ? Number(scroll >= 0.55) : smoothstep(scroll, 0.04, 1);
+    const arrival = standalone ? 1 : still ? Number(scroll >= 0.55) : smoothstep(scroll, 0.04, 1);
     // Leave room for the outgoing globe to recede before Earth's horizon enters.
     const departure = still ? Number(ending < 0.35) : 1 - smoothstep(ending, 0.33, 0.94);
     const earthArrival = still ? departure : 1 - smoothstep(ending, -0.04, 0.48);
@@ -244,16 +244,16 @@ export function mountScene(
     const horizonRadius = Math.max(width * 0.66, height * 0.59);
 
     spin = still ? 0 : damp(spin, input.hovering ? 0 : 1, input.hovering ? 3 : 1.6, dt);
-    for (const world of ['moon', 'mars'] as const) {
+    for (const world of ['moon', 'mars', 'space'] as const) {
       const active = displayed === world;
       handoff[world] = still ? Number(active) : damp(handoff[world], Number(active), 4.5, dt);
       const prominence = smoothstep(handoff[world], 0, 1);
       const group = groups[world];
       const risingRadius = lerp(horizonRadius, radius, arrival);
       group.visible = prominence > 0.001 && arrival > 0.001 && departure < 0.999 && (!still || departure === 0);
-      group.scale.setScalar(risingRadius * lerp(0.53, 1, prominence) * lerp(1, 0.18, departure));
+      group.scale.setScalar(risingRadius * (world === 'space' ? 0.77 : 1) * lerp(0.53, 1, prominence) * lerp(1, 0.18, departure));
       group.position.set(
-        width * (1 - prominence) * (active ? 0.75 : -0.29),
+        width * (1 - prominence) * (active ? 0.75 : -0.29) * slideDirection,
         -(risingRadius + height * 0.46) * (1 - arrival) + height * departure * 0.26,
         -850 * (1 - prominence) - 900 * departure,
       );
@@ -269,20 +269,28 @@ export function mountScene(
     const zoomTarget = Number(Boolean(input.mission));
     zoom = still ? 0 : damp(zoom, zoomTarget, 3, dt);
     if (Math.abs(zoomTarget - zoom) < 0.0001) zoom = zoomTarget;
+    groups[displayed].updateMatrixWorld(true);
     for (const { id, world, point } of sites) {
       const group = groups[world];
-      group.updateMatrixWorld(true);
-      site.copy(point).applyMatrix4(group.matrixWorld);
-      globeCenter.setFromMatrixPosition(group.matrixWorld);
       const marker = markers[id];
       if (!marker) continue;
-      marker.hidden = !(models[world] && group.visible && displayed === world
-        && input.destination === world && arrival > 0.95 && departure < 0.06
-        && site.z - globeCenter.z > group.scale.x * 0.2 && !input.mission && zoom < 0.03);
+      if (displayed !== world || input.destination !== world || input.mission || zoom >= 0.03) {
+        marker.hidden = true;
+        continue;
+      }
+      site.copy(point).applyMatrix4(group.matrixWorld);
+      globeCenter.setFromMatrixPosition(group.matrixWorld);
+      marker.hidden = !(models[world] && group.visible && arrival > 0.95 && departure < 0.06
+        && (world === 'space' ? site.z > globeCenter.z || Math.hypot(site.x - globeCenter.x, site.y - globeCenter.y) > group.scale.x * 0.69 : site.z - globeCenter.z > group.scale.x * 0.2));
       if (!marker.hidden) {
+        // Apollo 11 and Surveyor 5 landed close together. Separate their hit areas
+        // on the globe while keeping both surface points for the camera zoom.
+        const nearbyMarkerOffset = markers.surveyor5
+          ? id === 'apollo' ? 26 : id === 'surveyor5' ? -26 : 0
+          : 0;
         // A compositor-driven translate keeps sub-pixel motion smooth,
         // unlike left/top, which re-lays out the marker every frame.
-        marker.style.translate = `${width / 2 + site.x}px ${height / 2 - site.y}px`;
+        marker.style.translate = `${width / 2 + site.x}px ${height / 2 - site.y + nearbyMarkerOffset}px`;
       }
     }
 
@@ -319,6 +327,12 @@ export function mountScene(
     earth.scale.setScalar(earthRadius);
     earth.position.set(0, -earthRadius - height * lerp(0.51, -0.05, earthArrival), lerp(-840, -90, earthArrival));
     earth.rotation.set(0.22, still ? 0.7 : 0.7 + 0.22 * earthArrival, -0.24);
+    if (standalone && groups.space.visible && models.earth) {
+      earth.visible = true;
+      earth.scale.setScalar(groups.space.scale.x * 0.68);
+      earth.position.copy(groups.space.position);
+      earth.rotation.set(0.14, input.space, -0.24);
+    }
     stars.position.y = still ? 0 : 95 * arrival + 140 * departure;
     stars.material.opacity = lerp(1, 0.48, earthArrival);
     stars.material.transparent = true;
@@ -327,12 +341,13 @@ export function mountScene(
 
   return () => {
     disposed = true;
+    requests.abort();
+    draco.dispose();
     window.removeEventListener('scroll', measureScroll);
     window.removeEventListener('resize', measureScroll);
     resize.disconnect();
     renderer.setAnimationLoop(null);
     for (const model of Object.values(models)) disposeModel(model);
-    for (const model of Object.values(pendingUpgrades)) disposeModel(model);
     atmosphere.geometry.dispose();
     atmosphere.material.dispose();
     stars.geometry.dispose();

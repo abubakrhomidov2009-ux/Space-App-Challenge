@@ -1,59 +1,35 @@
 'use client';
 
+import Link from 'next/link';
+import { useLanguage } from './use-language';
+import { libraryCopy } from '../library/labels';
 import Image from 'next/image';
-import { preload } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
 import type { Destination, SceneInput, SceneStatus } from './scene';
+import MobileMenu from './mobile-menu';
+import { useMissionDialog } from './use-mission-dialog';
 import MissionDialog from './mission-dialog';
 import LanguageSettings from './language-settings';
-import { museumCopy, type Language } from './languages';
-import { missionIds, missions, type MissionId } from './missions';
+import { museumCopy } from './languages';
+import { homepageMissionIds, missions, type MissionId } from './missions';
 import { odometerSources, routes, routeSources, trackLroKm, tracks, trackSources } from './routes';
 import styles from './museum.module.css';
 
 export default function Museum() {
   const markers = useRef<Partial<Record<MissionId, HTMLButtonElement>>>({});
-  const [selectedMission, setSelectedMission] = useState<MissionId>('lunokhod');
-  const dialog = useRef<HTMLDialogElement>(null);
   const rotation = useRef<HTMLDivElement>(null);
-  const [closing, setClosing] = useState(false);
-  // Counts story openings so the route replays each time one opens.
-  const [routeRun, setRouteRun] = useState(0);
   const sky = useRef<HTMLDivElement>(null);
   const explore = useRef<HTMLElement>(null);
   const finale = useRef<HTMLElement>(null);
-  const input = useRef<SceneInput>({ destination: 'moon', moon: 0, mars: Math.PI * 0.43, dragging: false, hovering: false, resumeAt: 0, mission: null, missionCovered: false });
+  const input = useRef<SceneInput>({ destination: 'moon', moon: 0, mars: Math.PI * 0.43, space: 0, dragging: false, hovering: false, resumeAt: 0, mission: null, missionCovered: false });
+  const { selectedMission, openMission: openStory, dialogProps } = useMissionDialog(input, rotation);
   const drag = useRef<{ id: number; x: number } | null>(null);
-  const [destination, setDestination] = useState<Destination>('moon');
-  const [status, setStatus] = useState<SceneStatus>({ moon: 'loading', mars: 'loading', earth: 'loading' });
+  const [destination, setDestination] = useState<Exclude<Destination, 'space'>>('moon');
+  const [status, setStatus] = useState<SceneStatus>({ moon: 'loading', mars: 'loading', earth: 'loading', space: 'loading' });
   const [unavailable, setUnavailable] = useState(false);
-  const [language, setLanguage] = useState<Language>('ru');
+  const { language, changeLanguage } = useLanguage();
   const copy = museumCopy[language];
   const nextDestination = destination === 'moon' ? 'mars' : 'moon';
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('tmas-language');
-      if (saved === 'ru' || saved === 'en' || saved === 'tg') {
-        setLanguage(saved);
-        document.documentElement.lang = saved;
-      }
-    } catch {
-      // The selector still works with storage disabled.
-    }
-    return () => { document.documentElement.lang = 'ru'; };
-  }, []);
-
-  function changeLanguage(next: Language) {
-    setLanguage(next);
-    document.documentElement.lang = next;
-    try {
-      localStorage.setItem('tmas-language', next);
-    } catch {
-      // The selection still applies for this visit.
-    }
-
-  }
 
   useEffect(() => {
     const host = sky.current;
@@ -83,12 +59,6 @@ export default function Museum() {
     input.current.resumeAt = performance.now() + 3000;
   }
 
-  useEffect(() => {
-    for (const mission of Object.values(missions)) {
-      if (mission.world === destination) preload(mission.image, { as: 'image' });
-    }
-  }, [destination]);
-
   // Pause the idle spin while a point is under the pointer or focused,
   // so the target stays still long enough to be clicked.
   // The release is delayed: while the globe coasts to a stop the point can
@@ -109,37 +79,10 @@ export default function Museum() {
   }
 
   function openMission(id: MissionId) {
-    if (!dialog.current || dialog.current.open) return;
-    setSelectedMission(id);
-    setRouteRun((count) => count + 1);
     // The marker hides on open, so its pointerleave may never fire.
     window.clearTimeout(releaseTimer.current);
     input.current.hovering = false;
-    input.current.mission = id;
-    dialog.current.showModal();
-    // showModal focuses the first button, which would show a focus ring after a click.
-    dialog.current.focus({ preventScroll: true });
-  }
-
-  function finishMission() {
-    input.current.missionCovered = false;
-    input.current.mission = null;
-    input.current.resumeAt = performance.now() + 3000;
-    dialog.current?.close();
-    setClosing(false);
-    rotation.current?.focus({ preventScroll: true });
-  }
-
-  function closeMission() {
-    if (closing) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      finishMission();
-      return;
-    }
-    input.current.missionCovered = false;
-    input.current.mission = null;
-    input.current.resumeAt = performance.now() + 3000;
-    setClosing(true);
+    openStory(id);
   }
 
   const message = unavailable
@@ -150,9 +93,19 @@ export default function Museum() {
 
   return (
     <main className={styles.museum}>
-      <LanguageSettings language={language} onChange={changeLanguage} />
-      <MissionDialog mission={missions[selectedMission]} route={routes[selectedMission]} routeSource={routeSources[selectedMission]} odometerSource={odometerSources[selectedMission]} track={tracks[selectedMission]} trackSource={trackSources[selectedMission]} trackLroKm={trackLroKm[selectedMission]} routeRun={routeRun} language={language} onLanguageChange={changeLanguage} dialog={dialog} closing={closing} onClose={closeMission} onReveal={() => { input.current.missionCovered = true; }} onExit={finishMission} />
-      {missionIds.map((id) => {
+      <header className={styles.heroNav}>
+        <nav className={styles.desktopLibrary} aria-label={libraryCopy[language].navigation}>
+          <Link href="/library" prefetch={false}>{libraryCopy[language].title}</Link>
+          <Link href="/library/globe" prefetch={false}>{libraryCopy[language].globe}</Link>
+        </nav>
+        <MobileMenu language={language} />
+        <LanguageSettings language={language} onChange={changeLanguage} />
+      </header>
+      <MissionDialog {...dialogProps} route={routes[selectedMission]} routeSource={routeSources[selectedMission]}
+        odometerSource={odometerSources[selectedMission]} track={tracks[selectedMission]}
+        trackSource={trackSources[selectedMission]} trackLroKm={trackLroKm[selectedMission]}
+        language={language} onLanguageChange={changeLanguage} />
+      {homepageMissionIds.map((id) => {
         const name = missions[id].copy[language].name;
         return (
           <button key={id} ref={(element) => {
@@ -168,7 +121,7 @@ export default function Museum() {
       })}
       <div ref={sky} className={styles.sky} aria-hidden="true" />
       <section className={styles.hero} aria-labelledby="museum-title">
-        <Image className={styles.logo} src="/tmas-logo.jpg" width={480} height={480} priority
+        <Image className={styles.logo} src="/tmas-logo.jpg" width={480} height={480} preload
           alt="TMAS — Museum of Abandoned Space" />
         <h1 id="museum-title">{copy.title}</h1>
         <p>{copy.intro}</p>

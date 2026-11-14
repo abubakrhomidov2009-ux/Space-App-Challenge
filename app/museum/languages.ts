@@ -2,7 +2,7 @@ export const languages = { ru: 'Русский', en: 'English', tg: 'Тоҷик�
 export type Language = keyof typeof languages;
 
 export const museumCopy = {
-  ru: {
+  ru: { landingRegion: 'Район посадки', orbit: 'Орбита телескопа',
     language: 'Язык', moon: 'Луна', mars: 'Марс', earth: 'Земля',
     title: 'Что мы оставили в космосе?',
     intro: 'Истории аппаратов, которые остались на Луне и Марсе.',
@@ -16,6 +16,7 @@ export const museumCopy = {
     back: 'Назад', mission: 'Хроника миссии NASA', coordinates: 'Координаты аппарата',
     vikingModel: 'Макет · NASA/JPL-Caltech/Университет Аризоны', jplPhoto: 'Архивное фото NASA/JPL',
     archive: 'Архивное фото NASA', illustration: 'Иллюстрация NASA', landing: 'Координаты посадки',
+    lrocPhoto: 'Снимок с орбиты · NASA/GSFC/Arizona State University',
     photo: 'Музейная модель · фото В. П. Галина',
     photoAlt: 'Восьмиколёсная музейная модель «Лунохода‑1» с открытой крышкой',
     routeLabel: 'Пройденный путь', km: 'км', sol: 'сол', of: 'из',
@@ -24,7 +25,7 @@ export const museumCopy = {
     trackLabel: 'От места посадки по колее', trackLro: 'Путь по снимкам LRO', finalPosition: 'Последняя позиция',
     trackNote: 'Схема по карте MIIGAiK и DLR, 2012. Порядок проезда на ней не показан.', routeOdometer: 'Одометр NASA', routeSource: 'Данные маршрута: NASA/PDS, Tim Parker',
   },
-  en: {
+  en: { landingRegion: 'Landing region', orbit: 'Telescope orbit',
     language: 'Language', moon: 'Moon', mars: 'Mars', earth: 'Earth',
     title: 'What did we leave in space?',
     intro: 'Stories of spacecraft that remain on the Moon and Mars.',
@@ -38,6 +39,7 @@ export const museumCopy = {
     back: 'Back', mission: 'NASA mission chronicle', coordinates: 'Rover coordinates',
     vikingModel: 'Model · NASA/JPL-Caltech/University of Arizona', jplPhoto: 'NASA/JPL archive photo',
     archive: 'NASA archive photo', illustration: 'NASA illustration', landing: 'Landing coordinates',
+    lrocPhoto: 'Orbital image · NASA/GSFC/Arizona State University',
     photo: 'Museum model · photo by V. P. Galin',
     photoAlt: 'Eight-wheeled museum model of Lunokhod 1 with its lid open',
     routeLabel: 'Distance driven', km: 'km', sol: 'sol', of: 'of',
@@ -46,7 +48,7 @@ export const museumCopy = {
     trackLabel: 'From the landing site along the track', trackLro: 'Route measured from LRO images', finalPosition: 'Final position',
     trackNote: 'Redrawn from the MIIGAiK and DLR map, 2012. It does not show the order of the drive.', routeOdometer: 'NASA odometer', routeSource: 'Route data: NASA/PDS, Tim Parker',
   },
-  tg: {
+  tg: { landingRegion: 'Минтақаи фуруд', orbit: 'Мадори телескоп',
     language: 'Забон', moon: 'Моҳ', mars: 'Миррих', earth: 'Замин',
     title: 'Мо дар кайҳон чӣ гузоштем?',
     intro: 'Қиссаи дастгоҳҳое, ки дар Моҳ ва Миррих боқӣ мондаанд.',
@@ -60,6 +62,7 @@ export const museumCopy = {
     back: 'Бозгашт', mission: 'Солномаи миссия аз NASA', coordinates: 'Координатаҳои дастгоҳ',
     vikingModel: 'Макет · NASA/JPL-Caltech/Донишгоҳи Аризона', jplPhoto: 'Акси бойгонии NASA/JPL',
     archive: 'Акси бойгонии NASA', illustration: 'Тасвири NASA', landing: 'Координатаҳои фуруд',
+    lrocPhoto: 'Акс аз мадор · NASA/GSFC/Arizona State University',
     photo: 'Макети осорхона · акси В. П. Галин',
     photoAlt: 'Макети ҳаштчархаи «Луноход‑1» дар осорхона бо сарпӯши кушода',
     routeLabel: 'Масофаи тайкардашуда', km: 'км', sol: 'сол', of: 'аз',
