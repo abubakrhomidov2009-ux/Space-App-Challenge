@@ -406,9 +406,9 @@
 
 .missionCopy {
   max-width: 39rem;
-  padding: clamp(3.75rem, 9svh, 5rem) var(--gutter) 3rem clamp(1.5rem, 4vw, 5rem);
+  padding: clamp(3.25rem, 7svh, 4.5rem) var(--gutter) 2rem clamp(1.5rem, 4vw, 5rem);
   font-size: clamp(.98rem, min(.94rem + .3vw, 2.4svh), 1.15rem);
-  line-height: 1.6;
+  line-height: 1.57;
   color: #d2d4de;
 }
 
@@ -423,7 +423,7 @@
 }
 
 .missionIntro { color: white; font-size: clamp(1.1rem, min(2.2vw, 3svh), 1.45rem); }
-.missionSources { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.9rem 0 0; }
+.missionSources { display: flex; flex-wrap: wrap; gap: .7rem; margin: 1.5rem 0 0; }
 
 .missionFog {
   --fog-highlight: #53678280;
@@ -680,12 +680,28 @@
 }
 
 .routeNote {
+  /* A dark halo keeps labels readable where the track passes behind them. */
+  paint-order: stroke fill;
+  stroke: #0b0c10;
+  stroke-width: 8px;
+  stroke-linejoin: round;
   fill: #aeb3c2;
   font: 400 31px 'IBM Plex Sans', sans-serif;
   transition: opacity .8s ease;
 }
 
 .routeNote[data-visible='false'] { opacity: 0; }
+
+.routeEndMark { transition: opacity .8s ease; }
+.routeEndMark[data-visible='false'] { opacity: 0; }
+
+.routeEndMark .routePulse {
+  fill: var(--accent);
+  opacity: .4;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: routePulse 2.2s ease-out infinite;
+}
 
 .routeScale {
   fill: none;
@@ -787,6 +803,9 @@
 
 .routeOdometer { margin-top: -.4rem; }
 
+/* A tall map has a fixed width from its own proportions; a percentage inside an auto column would stretch it. */
+.missionPanel[data-wide='false'] .routeMap { width: calc(var(--map-h) * var(--ar)); }
+
 /* A wide map takes the full width and the numbers go under it, until the desktop layout. */
 @media (max-width: 1099px) {
   .missionPanel[data-wide='true'] .route { grid-template-columns: minmax(0, 1fr); }
@@ -809,6 +828,8 @@
   }
 
   .missionPanel[data-route='true'] .missionPhoto { grid-row: auto; }
+  .missionPanel[data-route='true'] .missionSources { gap: .55rem; }
+  .missionPanel[data-route='true'] .sourceChip { padding: .7rem 1rem .7rem 1.1rem; font-size: .9375rem; }
   .missionPanel[data-route='true'] .missionCopy {
     padding-left: clamp(1.5rem, 3vw, 3.5rem);
     padding-right: 1rem;
@@ -847,7 +868,8 @@
 @media (prefers-reduced-motion: reduce) {
   .missionBack, .missionBackIcon { transition: none; }
   .missionBack:hover .missionBackIcon { transform: none; }
-  .routeRover .routePulse { animation: none; }
+  .routeRover .routePulse, .routeEndMark .routePulse { animation: none; }
+  .routeEndMark { transition: none; }
   .routeNote { transition: none; }
 }
 

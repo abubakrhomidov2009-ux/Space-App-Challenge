@@ -20,7 +20,9 @@ export const museumCopy = {
     photoAlt: 'Восьмиколёсная музейная модель «Лунохода‑1» с открытой крышкой',
     routeLabel: 'Пройденный путь', km: 'км', sol: 'сол', of: 'из',
     routeStart: 'Посадка', routeEnd: 'Последний заезд', replay: 'Повторить',
-    scrub: 'Положение на маршруте', routeOdometer: 'Одометр NASA', routeSource: 'Данные маршрута: NASA/PDS, Tim Parker',
+    scrub: 'Положение на маршруте',
+    trackLabel: 'От места посадки по колее', trackLro: 'Путь по снимкам LRO', finalPosition: 'Последняя позиция',
+    trackNote: 'Схема по карте MIIGAiK и DLR, 2012. Порядок проезда на ней не показан.', routeOdometer: 'Одометр NASA', routeSource: 'Данные маршрута: NASA/PDS, Tim Parker',
   },
   en: {
     language: 'Language', moon: 'Moon', mars: 'Mars', earth: 'Earth',
@@ -40,7 +42,9 @@ export const museumCopy = {
     photoAlt: 'Eight-wheeled museum model of Lunokhod 1 with its lid open',
     routeLabel: 'Distance driven', km: 'km', sol: 'sol', of: 'of',
     routeStart: 'Landing', routeEnd: 'Last drive', replay: 'Replay',
-    scrub: 'Position along the route', routeOdometer: 'NASA odometer', routeSource: 'Route data: NASA/PDS, Tim Parker',
+    scrub: 'Position along the route',
+    trackLabel: 'From the landing site along the track', trackLro: 'Route measured from LRO images', finalPosition: 'Final position',
+    trackNote: 'Redrawn from the MIIGAiK and DLR map, 2012. It does not show the order of the drive.', routeOdometer: 'NASA odometer', routeSource: 'Route data: NASA/PDS, Tim Parker',
   },
   tg: {
     language: 'Забон', moon: 'Моҳ', mars: 'Миррих', earth: 'Замин',
@@ -60,6 +64,8 @@ export const museumCopy = {
     photoAlt: 'Макети ҳаштчархаи «Луноход‑1» дар осорхона бо сарпӯши кушода',
     routeLabel: 'Масофаи тайкардашуда', km: 'км', sol: 'сол', of: 'аз',
     routeStart: 'Фуруд', routeEnd: 'Рондани охирин', replay: 'Такрор',
-    scrub: 'Мавқеъ дар масир', routeOdometer: 'Одометри NASA', routeSource: 'Маълумоти масир: NASA/PDS, Tim Parker',
+    scrub: 'Мавқеъ дар масир',
+    trackLabel: 'Аз маҳалли фуруд бо роҳи чархҳо', trackLro: 'Масир аз рӯи тасвирҳои LRO', finalPosition: 'Мавқеи охирин',
+    trackNote: 'Нақша аз рӯи харитаи MIIGAiK ва DLR, соли 2012. Тартиби ронданро харита нишон намедиҳад.', routeOdometer: 'Одометри NASA', routeSource: 'Маълумоти масир: NASA/PDS, Tim Parker',
   },
 };

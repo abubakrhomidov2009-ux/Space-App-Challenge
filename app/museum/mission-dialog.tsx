@@ -7,7 +7,8 @@ import LanguageSettings from './language-settings';
 import type { missions, MissionId } from './missions';
 import RouteMap from './route-map';
 import SourceLink from './source-link';
-import { isWideRoute, type Route } from './routes';
+import TrackMap from './track-map';
+import { isWideRoute, type Route, type Track } from './routes';
 import styles from './museum.module.css';
 
 export default function MissionDialog({
@@ -15,6 +16,9 @@ export default function MissionDialog({
   route,
   routeSource,
   odometerSource,
+  track,
+  trackSource,
+  trackLroKm,
   routeRun,
   language,
   onLanguageChange,
@@ -28,6 +32,9 @@ export default function MissionDialog({
   route?: Route;
   routeSource?: string;
   odometerSource?: string;
+  track?: Track;
+  trackSource?: string;
+  trackLroKm?: number;
   routeRun: number;
   language: Language;
   onLanguageChange: (language: Language) => void;
@@ -46,7 +53,7 @@ export default function MissionDialog({
         event.preventDefault();
         onClose();
       }}>
-      <div className={styles.missionPanel} data-route={Boolean(route)} data-wide={Boolean(route && isWideRoute(route))} data-world={mission.world} onAnimationEnd={(event) => {
+      <div className={styles.missionPanel} data-route={Boolean(route || track)} data-wide={Boolean(route && isWideRoute(route))} data-world={mission.world} onAnimationEnd={(event) => {
         if (event.target !== event.currentTarget) return;
         if (closing) onExit();
         else onReveal();
@@ -76,6 +83,11 @@ export default function MissionDialog({
             <SourceLink href={mission.sources.coordinates}>{mission.siteKind === 'landing' ? labels.landing : labels.coordinates}</SourceLink>
           </p>
         </article>
+        {track && (
+          <TrackMap track={track} language={language} playKey={routeRun} world={mission.world}
+            sourceUrl={trackSource} lroKm={trackLroKm}
+            lroSource={'distance' in mission.sources ? mission.sources.distance : undefined} />
+        )}
         {route && (
           <RouteMap route={route} language={language} playKey={routeRun}
             world={mission.world} sourceUrl={routeSource} odometerSource={odometerSource} />
