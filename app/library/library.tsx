@@ -12,7 +12,7 @@ import { categories, categoryIds, type Category } from './categories';
 import { libraryCopy } from './labels';
 import styles from './library.module.css';
 
-const kinds = ['rover', 'lander', 'combined', 'telescope'] as const;
+const kinds = ['rover', 'lander', 'combined', 'helicopter', 'hardware', 'orbiter', 'telescope'] as const;
 
 function normalize(value: string) {
   return value.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
@@ -26,10 +26,11 @@ export default function Library({ mission, category }: { mission?: typeof missio
   const copy = museumCopy[language];
 
   const categoryName = category === 'space' ? labels.space : category ? copy[category] : labels.title;
+  const categoryMissions = missionIds.filter((id) => missions[id].world === category);
   const searchTerm = normalize(query);
-  const matches = missionIds.filter((id) => {
+  const matches = categoryMissions.filter((id) => {
     const entry = missions[id];
-    return category === entry.world && (!kind || kind === entry.kind)
+    return (!kind || kind === entry.kind)
       && Object.values(entry.copy).some(({ name }) => normalize(name).includes(searchTerm));
   });
 
@@ -68,7 +69,7 @@ export default function Library({ mission, category }: { mission?: typeof missio
             <label>{labels.search}<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
             <label>{labels.type}<select value={kind} onChange={(event) => setKind(event.target.value)}>
               <option value="">{labels.all}</option>
-              {kinds.filter((value) => category === 'space' ? value === 'telescope' : value !== 'telescope').map((value) => <option key={value} value={value}>{labels[value]}</option>)}
+              {kinds.filter((value) => categoryMissions.some((id) => missions[id].kind === value)).map((value) => <option key={value} value={value}>{labels[value]}</option>)}
             </select></label>
           </div>
           <p className={styles.description} role="status">{matches.length ? `${labels.count} · ${matches.length}` : labels.empty}</p>

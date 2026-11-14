@@ -2,7 +2,8 @@ export const languages = { ru: 'Русский', en: 'English', tg: 'Тоҷик�
 export type Language = keyof typeof languages;
 
 export const museumCopy = {
-  ru: { landingRegion: 'Район посадки', orbit: 'Орбита телескопа',
+  ru: { marsOrbit: 'Место миссии', hirise: 'Снимок HiRISE', marsImage: 'Изображение Марса · NASA', phobosPhoto: 'Снимок Фобоса · NASA', dronePhoto: 'Снимок с воздуха · NASA/JPL-Caltech', ingenuityPhoto: 'Снимок · NASA/JPL-Caltech/ASU/MSSS',
+    landingRegion: 'Район посадки', orbit: 'Орбита телескопа',
     language: 'Язык', moon: 'Луна', mars: 'Марс', earth: 'Земля',
     title: 'Что мы оставили в космосе?',
     intro: 'Истории аппаратов, которые остались на Луне и Марсе.',
@@ -20,7 +21,8 @@ export const museumCopy = {
     photo: 'Музейная модель · фото В. П. Галина',
     photoAlt: 'Восьмиколёсная музейная модель «Лунохода‑1» с открытой крышкой',
   },
-  en: { landingRegion: 'Landing region', orbit: 'Telescope orbit',
+  en: { marsOrbit: 'Mission location', hirise: 'HiRISE image', marsImage: 'Mars image · NASA', phobosPhoto: 'Phobos image · NASA', dronePhoto: 'Aerial image · NASA/JPL-Caltech', ingenuityPhoto: 'Image · NASA/JPL-Caltech/ASU/MSSS',
+    landingRegion: 'Landing region', orbit: 'Telescope orbit',
     language: 'Language', moon: 'Moon', mars: 'Mars', earth: 'Earth',
     title: 'What did we leave in space?',
     intro: 'Stories of spacecraft that remain on the Moon and Mars.',
@@ -38,7 +40,8 @@ export const museumCopy = {
     photo: 'Museum model · photo by V. P. Galin',
     photoAlt: 'Eight-wheeled museum model of Lunokhod 1 with its lid open',
   },
-  tg: { landingRegion: 'Минтақаи фуруд', orbit: 'Мадори телескоп',
+  tg: { marsOrbit: 'Маҳалли миссия', hirise: 'Акси HiRISE', marsImage: 'Тасвири Миррих · NASA', phobosPhoto: 'Акси Фобос · NASA', dronePhoto: 'Акс аз ҳаво · NASA/JPL-Caltech', ingenuityPhoto: 'Акс · NASA/JPL-Caltech/ASU/MSSS',
+    landingRegion: 'Минтақаи фуруд', orbit: 'Мадори телескоп',
     language: 'Забон', moon: 'Моҳ', mars: 'Миррих', earth: 'Замин',
     title: 'Мо дар кайҳон чӣ гузоштем?',
     intro: 'Қиссаи дастгоҳҳое, ки дар Моҳ ва Миррих боқӣ мондаанд.',

@@ -26,7 +26,7 @@ export default function MissionContent({ mission, language, heading: Heading = '
         {copy.story.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
         <p className={styles.missionSources}>
           <a href={mission.sources.mission}>{labels.mission}</a>
-          <a href={mission.sources.coordinates}>{mission.siteKind === 'landing' ? labels.landing : mission.siteKind === 'landingRegion' ? labels.landingRegion : mission.siteKind === 'orbit' ? labels.orbit : labels.coordinates}</a>
+          <a href={mission.sources.coordinates}>{mission.siteKind === 'landing' ? labels.landing : mission.siteKind === 'landingRegion' ? labels.landingRegion : mission.siteKind === 'marsOrbit' ? labels.marsOrbit : mission.siteKind === 'orbit' ? labels.orbit : labels.coordinates}</a>
         </p>
       </article>
     </>
