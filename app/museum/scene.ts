@@ -272,23 +272,30 @@ export function mountScene(
   // Share of the idle spin speed. Eases to 0 over a point and back to 1 after.
   let spin = 1;
   let zoomedMission: MissionId = 'lunokhod';
-  const sites = globeMissionIds.map((id) => {
+  // Separate nearby hit areas without moving their camera targets.
+  const markerOffsets: Partial<Record<MissionId, number>> = {
+    apollo: 26, surveyor5: -26,
+    opportunity: -28, schiaparelli: 28,
+    ingenuity: -27, 'perseverance-backshell': 27,
+  };
+  const sites = globeMissionIds.flatMap<{ id: MissionId; world: Destination; point: THREE.Vector3 }>((id) => {
     const mission = missions[id];
     if (mission.world === 'space') {
       const exhibit = orbitExhibits.find((entry) => entry.id === id)!;
-      return { id, world: mission.world, point: new THREE.Vector3().fromArray(exhibit.position) };
+      return [{ id, world: mission.world, point: new THREE.Vector3().fromArray(exhibit.position) }];
     }
+    if (!('latitude' in mission)) return [];
     const latitude = THREE.MathUtils.degToRad(mission.latitude);
     // The Mars GLB puts the centre of its map 72° west of the model's +Z axis.
     const longitude = THREE.MathUtils.degToRad(mission.longitude - (mission.world === 'mars' ? 72 : 0));
-    return {
+    return [{
       id, world: mission.world,
       point: new THREE.Vector3(
         Math.cos(latitude) * Math.sin(longitude),
         Math.sin(latitude),
         Math.cos(latitude) * Math.cos(longitude),
       ),
-    };
+    }];
   });
   const site = new THREE.Vector3();
   const globeCenter = new THREE.Vector3();
@@ -451,14 +458,10 @@ export function mountScene(
       if (!marker.hidden) {
         marker.style.opacity = String(shown);
         marker.style.scale = String(lerp(0.55, 1, smoothstep(shown, 0, 1)));
-        // Apollo 11 and Surveyor 5 landed close together. Separate their hit areas
-        // on the globe while keeping both surface points for the camera zoom.
-        const nearbyMarkerOffset = markers.surveyor5
-          ? id === 'apollo' ? 26 : id === 'surveyor5' ? -26 : 0
-          : 0;
+        const offset = standalone ? markerOffsets[id] ?? 0 : 0;
         // A compositor-driven translate keeps sub-pixel motion smooth,
         // unlike left/top, which re-lays out the marker every frame.
-        marker.style.translate = `${width / 2 + site.x}px ${height / 2 - site.y + nearbyMarkerOffset}px`;
+        marker.style.translate = `${width / 2 + site.x}px ${height / 2 - site.y + offset}px`;
       }
     }
 

@@ -95,7 +95,11 @@ export default function LibraryHub({ language, controls }: { language: Language;
     // The world comes forward, the camera starts to close in on the site, and before the models'
     // detail gives out the fog covers the view and the story opens.
     later(() => { input.current.focus = world; }, 60);
-    later(() => { input.current.zoomTo = 0.5; input.current.mission = id; }, 560);
+    // An orbiter has no spot on the surface to close in on: its world comes forward and the fog follows.
+    const entry = missions[id];
+    if (entry.world === 'space' || 'latitude' in entry) {
+      later(() => { input.current.zoomTo = 0.5; input.current.mission = id; }, 560);
+    }
     later(() => setFog('close', world), 1150);
     later(() => router.push(href), 1850);
   }, [router, later]);

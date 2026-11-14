@@ -36,6 +36,7 @@ export default function Dossier({ id, language, children }: { id: MissionId; lan
   const photoLabel = mission.imageKind === 'model' ? labels.photo : labels[mission.imageKind];
   const siteLabel = mission.siteKind === 'landing' ? labels.landing
     : mission.siteKind === 'landingRegion' ? labels.landingRegion
+    : mission.siteKind === 'marsOrbit' ? labels.marsOrbit
     : mission.siteKind === 'orbit' ? labels.orbit : labels.coordinates;
 
   return (

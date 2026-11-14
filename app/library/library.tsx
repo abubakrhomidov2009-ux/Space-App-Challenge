@@ -20,7 +20,7 @@ import LibraryHub, { type HubControls } from './library-hub';
 import { getFog, setFog } from './fog-store';
 import styles from './library.module.css';
 
-const kinds = ['rover', 'lander', 'combined', 'telescope'] as const;
+const kinds = ['rover', 'lander', 'combined', 'helicopter', 'hardware', 'orbiter', 'telescope'] as const;
 
 // Reorder the list as one smooth motion where the browser supports it; otherwise just update.
 // Only the grid is reordered this way: the timeline's cards are large, and snapshotting them all
@@ -69,10 +69,11 @@ export default function Library({ mission, category }: { mission?: typeof missio
   const extras = missionId ? missionExtras(missionId) : undefined;
 
   const categoryName = category === 'space' ? labels.space : category ? copy[category] : labels.title;
+  const categoryMissions = missionIds.filter((id) => missions[id].world === category);
   const searchTerm = normalize(search);
-  const matches = missionIds.filter((id) => {
+  const matches = categoryMissions.filter((id) => {
     const entry = missions[id];
-    return category === entry.world && (!kind || kind === entry.kind)
+    return (!kind || kind === entry.kind)
       && Object.values(entry.copy).some(({ name }) => normalize(name).includes(searchTerm));
   });
 
@@ -97,7 +98,7 @@ export default function Library({ mission, category }: { mission?: typeof missio
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const kindOptions = kinds.filter((value) => category === 'space' ? value === 'telescope' : value !== 'telescope');
+  const kindOptions = kinds.filter((value) => categoryMissions.some((id) => missions[id].kind === value));
 
   if (!mission && !category) {
     return (
