@@ -11,7 +11,7 @@ import { useMissionDialog } from './use-mission-dialog';
 import MissionDialog from './mission-dialog';
 import LanguageSettings from './language-settings';
 import { museumCopy } from './languages';
-import { missionIds, missions, type MissionId } from './missions';
+import { homepageMissionIds, missions, type MissionId } from './missions';
 import styles from './museum.module.css';
 
 export default function Museum() {
@@ -76,7 +76,7 @@ export default function Museum() {
         <LanguageSettings language={language} onChange={changeLanguage} />
       </header>
       <MissionDialog {...dialogProps} language={language} onLanguageChange={changeLanguage} />
-      {missionIds.filter((id) => missions[id].world !== 'space').map((id) => {
+      {homepageMissionIds.map((id) => {
         const name = missions[id].copy[language].name;
         return (
           <button key={id} ref={(element) => {

@@ -2,6 +2,7 @@ import { catalogExpansion } from './catalog-expansion';
 import { hubble } from './hubble';
 import { additionalMissions } from './additional-missions';
 import { lunokhod } from './lunokhod';
+import { lunarMissions } from './lunar-missions';
 
 const marsCoordinates = 'https://www-robotics.jpl.nasa.gov/media/documents/05pers_mer_JIQgXbW.pdf';
 
@@ -77,10 +78,14 @@ export const missions = {
       ] },
     },
   },
+  ...lunarMissions,
 } as const;
 
 export type MissionId = keyof typeof missions;
 export const missionIds = Object.keys(missions) as MissionId[];
+export const homepageMissionIds = missionIds.filter((id) =>
+  missions[id].world !== 'space' && !Object.hasOwn(lunarMissions, id),
+);
 
 // Each entry uses the shared telescope mesh. Positions are illustrative.
 export const orbitExhibits = ([
