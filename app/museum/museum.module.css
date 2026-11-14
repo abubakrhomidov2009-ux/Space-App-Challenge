@@ -351,16 +351,32 @@
   position: fixed;
   z-index: 2;
   inset: 1.25rem auto auto max(.5rem, env(safe-area-inset-left));
-  padding: .7rem 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .72rem 1.25rem .72rem 1.05rem;
   border: 0;
   border-radius: 999px;
   background: #13161e;
   box-shadow: 0 10px 30px #0008;
   color: white;
+  font-size: 1rem;
+  line-height: 1.25;
   transition: background .3s ease;
 }
 
 .missionBack:hover { background: #1d212c; }
+
+/* Drawn arrow, centred on the text; it steps back a little on hover. */
+.missionBackIcon {
+  flex: none;
+  width: 1.05em;
+  height: 1.05em;
+  transition: transform .45s cubic-bezier(.2, .7, .2, 1);
+}
+
+.missionBack:hover .missionBackIcon,
+.missionBack:focus-visible .missionBackIcon { transform: translateX(-3px); }
 
 .missionPhoto {
   position: relative;
@@ -619,12 +635,14 @@
 .route[data-world='moon'] { --accent: #cfd9ee; }
 
 .routeMap {
+  --map-h: min(25rem, 54svh);
   display: block;
-  height: min(25rem, 54svh);
-  width: auto;
-  border-radius: 1rem;
-  background: #0e1016;
-  overflow: hidden;
+  /* Tall routes are limited by height, wide ones by the column width. */
+  width: min(100%, calc(var(--map-h) * var(--ar)));
+  height: auto;
+  aspect-ratio: var(--ar);
+  /* No plate behind the route: the line is drawn straight onto the page. */
+  overflow: visible;
 }
 
 .routeAhead {
@@ -761,9 +779,20 @@
 
 .routeControls button:hover { background: color-mix(in srgb, var(--accent) 24%, #171a23); color: white; }
 
-.routeCredit {
+.routeCredit,
+.routeOdometer {
   grid-column: 1 / -1;
   margin: 0;
+}
+
+.routeOdometer { margin-top: -.4rem; }
+
+/* A wide map takes the full width and the numbers go under it, until the desktop layout. */
+@media (max-width: 1099px) {
+  .missionPanel[data-wide='true'] .route { grid-template-columns: minmax(0, 1fr); }
+  .missionPanel[data-wide='true'] .routeStats { grid-template-columns: auto 1fr; align-items: end; column-gap: 1rem; }
+  .missionPanel[data-wide='true'] .routeLabel { grid-column: 1 / -1; }
+  .missionPanel[data-wide='true'] .routeKm { grid-row: 2 / span 2; }
 }
 
 /* Tablet: the route sits under the text, in the text column. */
@@ -776,32 +805,48 @@
 /* Desktop: text and route stand side by side, so the story fits one screen. */
 @media (min-width: 1100px) {
   .missionPanel[data-route='true'] {
-    grid-template-columns: minmax(0, .78fr) minmax(0, 1fr) minmax(15rem, .6fr);
+    grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr) minmax(0, .68fr);
   }
 
   .missionPanel[data-route='true'] .missionPhoto { grid-row: auto; }
-  .missionPanel[data-route='true'] .missionCopy { padding-right: 1.5rem; padding-bottom: 3rem; }
+  .missionPanel[data-route='true'] .missionCopy {
+    padding-left: clamp(1.5rem, 3vw, 3.5rem);
+    padding-right: 1rem;
+    padding-bottom: 1.25rem;
+  }
+
+  /* The photo keeps its width, so the headline gives way a little. */
+  .missionPanel[data-route='true'] .missionCopy h2 {
+    font-size: clamp(2.8rem, min(4.8vw, 11svh), 5.6rem);
+  }
 
   .missionPanel[data-route='true'] .route {
     grid-column: auto;
     grid-template-columns: 1fr;
     gap: 1rem;
     align-self: center;
-    padding: 4.5rem var(--gutter) 2rem 0;
+    padding: 4.5rem clamp(1.5rem, 3vw, 3rem) 2rem 0;
   }
 
-  .missionPanel[data-route='true'] .routeMap { height: min(30rem, 50svh); }
+  .missionPanel[data-route='true'] .routeMap { --map-h: min(30rem, 50svh); }
   .missionPanel[data-route='true'] .routeStats { grid-template-columns: auto 1fr; align-items: end; column-gap: 1rem; }
   .missionPanel[data-route='true'] .routeLabel { grid-column: 1 / -1; }
   .missionPanel[data-route='true'] .routeKm { grid-row: 2 / span 2; }
 }
 
+@media (min-width: 1100px) {
+  .missionPanel[data-wide='true'] .routeNote { font-size: 42px; }
+}
+
 @media (max-width: 740px) {
+  .missionPanel[data-wide='true'] .routeNote { font-size: 40px; }
   .route { gap: 1.1rem 1.25rem; padding: 0 var(--gutter) 3rem; }
-  .routeMap { height: min(16rem, 44svh); }
+  .routeMap { --map-h: min(16rem, 44svh); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .missionBack, .missionBackIcon { transition: none; }
+  .missionBack:hover .missionBackIcon { transform: none; }
   .routeRover .routePulse { animation: none; }
   .routeNote { transition: none; }
 }

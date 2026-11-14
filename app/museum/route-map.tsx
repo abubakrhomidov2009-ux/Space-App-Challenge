@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
 import { museumCopy, type Language } from './languages';
 import type { Route } from './routes';
 import SourceLink from './source-link';
 import styles from './museum.module.css';
 
-const MARGIN_M = 900;
+// Space around the line, as a share of the route's longest side.
+const MARGIN_SHARE = 0.07;
 const SIZE = 1000;
 const DRIVE_MS = 9000;
 // The mission fog covers the page for about this long when a story opens.
@@ -15,10 +16,12 @@ const AFTER_FOG_MS = 1700;
 function buildLayout(route: Route) {
   const xs = route.points.map((p) => p[0]);
   const ys = route.points.map((p) => p[1]);
-  const minX = Math.min(...xs) - MARGIN_M;
-  const maxX = Math.max(...xs) + MARGIN_M;
-  const minY = Math.min(...ys) - MARGIN_M;
-  const maxY = Math.max(...ys) + MARGIN_M;
+  const longest = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+  const margin = longest * MARGIN_SHARE;
+  const minX = Math.min(...xs) - margin;
+  const maxX = Math.max(...xs) + margin;
+  const minY = Math.min(...ys) - margin;
+  const maxY = Math.max(...ys) + margin;
   const scale = SIZE / Math.max(maxX - minX, maxY - minY);
   const width = (maxX - minX) * scale;
   const height = (maxY - minY) * scale;
@@ -36,17 +39,23 @@ function buildLayout(route: Route) {
   };
 }
 
-export default function RouteMap({ route, language, playKey, world, sourceUrl }: {
+export default function RouteMap({ route, language, playKey, world, sourceUrl, odometerSource }: {
   route: Route;
   language: Language;
   playKey: number;
   world: 'moon' | 'mars';
   sourceUrl?: string;
+  odometerSource?: string;
 }) {
   const labels = museumCopy[language];
   const layout = useMemo(() => buildLayout(route), [route]);
   const format = useMemo(
     () => new Intl.NumberFormat(language === 'en' ? 'en-US' : 'ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    [language],
+  );
+
+  const exact = useMemo(
+    () => new Intl.NumberFormat(language === 'en' ? 'en-US' : 'ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
     [language],
   );
 
@@ -137,7 +146,7 @@ export default function RouteMap({ route, language, playKey, world, sourceUrl }:
         {`${labels.routeLabel}: ${format.format(route.totalKm)} ${labels.km}, ${labels.sol} ${route.lastSol}`}
       </p>
       <svg className={styles.routeMap} viewBox={`0 0 ${layout.width.toFixed(1)} ${layout.height.toFixed(1)}`}
-        style={{ aspectRatio: `${layout.width} / ${layout.height}` }} aria-hidden="true">
+        style={{ '--ar': layout.width / layout.height } as CSSProperties} aria-hidden="true">
         <path className={styles.routeAhead} d={layout.d} />
         <path ref={trail} className={styles.routeDrawn} d={layout.d} />
         <circle className={styles.routeStart} cx={start.x} cy={start.y} r="6" />
@@ -165,6 +174,13 @@ export default function RouteMap({ route, language, playKey, world, sourceUrl }:
           onChange={(event) => { stop(); show(Number(event.target.value) / 1000); }} />
         <button type="button" onClick={play}>{labels.replay}</button>
       </div>
+      {route.odometerKm && (
+        <p className={styles.routeOdometer}>
+          {odometerSource
+            ? <SourceLink href={odometerSource} variant="quiet">{`${labels.routeOdometer}: ${exact.format(route.odometerKm)} ${labels.km}`}</SourceLink>
+            : `${labels.routeOdometer}: ${exact.format(route.odometerKm)} ${labels.km}`}
+        </p>
+      )}
       {sourceUrl && <p className={styles.routeCredit}><SourceLink href={sourceUrl} variant="quiet">{labels.routeSource}</SourceLink></p>}
     </div>
   );

@@ -20,7 +20,7 @@ export const museumCopy = {
     photoAlt: 'Восьмиколёсная музейная модель «Лунохода‑1» с открытой крышкой',
     routeLabel: 'Пройденный путь', km: 'км', sol: 'сол', of: 'из',
     routeStart: 'Посадка', routeEnd: 'Последний заезд', replay: 'Повторить',
-    scrub: 'Положение на маршруте', routeSource: 'Данные маршрута: NASA/PDS, Tim Parker',
+    scrub: 'Положение на маршруте', routeOdometer: 'Одометр NASA', routeSource: 'Данные маршрута: NASA/PDS, Tim Parker',
   },
   en: {
     language: 'Language', moon: 'Moon', mars: 'Mars', earth: 'Earth',
@@ -40,7 +40,7 @@ export const museumCopy = {
     photoAlt: 'Eight-wheeled museum model of Lunokhod 1 with its lid open',
     routeLabel: 'Distance driven', km: 'km', sol: 'sol', of: 'of',
     routeStart: 'Landing', routeEnd: 'Last drive', replay: 'Replay',
-    scrub: 'Position along the route', routeSource: 'Route data: NASA/PDS, Tim Parker',
+    scrub: 'Position along the route', routeOdometer: 'NASA odometer', routeSource: 'Route data: NASA/PDS, Tim Parker',
   },
   tg: {
     language: 'Забон', moon: 'Моҳ', mars: 'Миррих', earth: 'Замин',
@@ -60,6 +60,6 @@ export const museumCopy = {
     photoAlt: 'Макети ҳаштчархаи «Луноход‑1» дар осорхона бо сарпӯши кушода',
     routeLabel: 'Масофаи тайкардашуда', km: 'км', sol: 'сол', of: 'аз',
     routeStart: 'Фуруд', routeEnd: 'Рондани охирин', replay: 'Такрор',
-    scrub: 'Мавқеъ дар масир', routeSource: 'Маълумоти масир: NASA/PDS, Tim Parker',
+    scrub: 'Мавқеъ дар масир', routeOdometer: 'Одометри NASA', routeSource: 'Маълумоти масир: NASA/PDS, Tim Parker',
   },
 };

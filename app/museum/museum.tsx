@@ -8,7 +8,7 @@ import MissionDialog from './mission-dialog';
 import LanguageSettings from './language-settings';
 import { museumCopy, type Language } from './languages';
 import { missionIds, missions, type MissionId } from './missions';
-import { routes, routeSources } from './routes';
+import { odometerSources, routes, routeSources } from './routes';
 import styles from './museum.module.css';
 
 export default function Museum() {
@@ -151,7 +151,7 @@ export default function Museum() {
   return (
     <main className={styles.museum}>
       <LanguageSettings language={language} onChange={changeLanguage} />
-      <MissionDialog mission={missions[selectedMission]} route={routes[selectedMission]} routeSource={routeSources[selectedMission]} routeRun={routeRun} language={language} onLanguageChange={changeLanguage} dialog={dialog} closing={closing} onClose={closeMission} onReveal={() => { input.current.missionCovered = true; }} onExit={finishMission} />
+      <MissionDialog mission={missions[selectedMission]} route={routes[selectedMission]} routeSource={routeSources[selectedMission]} odometerSource={odometerSources[selectedMission]} routeRun={routeRun} language={language} onLanguageChange={changeLanguage} dialog={dialog} closing={closing} onClose={closeMission} onReveal={() => { input.current.missionCovered = true; }} onExit={finishMission} />
       {missionIds.map((id) => {
         const name = missions[id].copy[language].name;
         return (

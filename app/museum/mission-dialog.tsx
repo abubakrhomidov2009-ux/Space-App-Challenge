@@ -7,13 +7,14 @@ import LanguageSettings from './language-settings';
 import type { missions, MissionId } from './missions';
 import RouteMap from './route-map';
 import SourceLink from './source-link';
-import type { Route } from './routes';
+import { isWideRoute, type Route } from './routes';
 import styles from './museum.module.css';
 
 export default function MissionDialog({
   mission,
   route,
   routeSource,
+  odometerSource,
   routeRun,
   language,
   onLanguageChange,
@@ -26,6 +27,7 @@ export default function MissionDialog({
   mission: typeof missions[MissionId];
   route?: Route;
   routeSource?: string;
+  odometerSource?: string;
   routeRun: number;
   language: Language;
   onLanguageChange: (language: Language) => void;
@@ -44,12 +46,18 @@ export default function MissionDialog({
         event.preventDefault();
         onClose();
       }}>
-      <div className={styles.missionPanel} data-route={Boolean(route)} data-world={mission.world} onAnimationEnd={(event) => {
+      <div className={styles.missionPanel} data-route={Boolean(route)} data-wide={Boolean(route && isWideRoute(route))} data-world={mission.world} onAnimationEnd={(event) => {
         if (event.target !== event.currentTarget) return;
         if (closing) onExit();
         else onReveal();
       }}>
-        <button className={styles.missionBack} onClick={onClose}>← {labels.back}</button>
+        <button className={styles.missionBack} onClick={onClose}>
+          <svg className={styles.missionBackIcon} viewBox="0 0 16 16" fill="none" stroke="currentColor"
+            strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M13 8H3m4.5-4.5L3 8l4.5 4.5" />
+          </svg>
+          {labels.back}
+        </button>
         <LanguageSettings language={language} onChange={onLanguageChange} />
         <figure className={styles.missionPhoto} data-world={mission.world}>
           <Image src={mission.image} fill unoptimized
@@ -70,7 +78,7 @@ export default function MissionDialog({
         </article>
         {route && (
           <RouteMap route={route} language={language} playKey={routeRun}
-            world={mission.world} sourceUrl={routeSource} />
+            world={mission.world} sourceUrl={routeSource} odometerSource={odometerSource} />
         )}
       </div>
       <div key={closing ? 'closing' : 'opening'} className={styles.missionFog} data-fog={mission.world} aria-hidden="true" />
