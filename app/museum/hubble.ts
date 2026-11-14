@@ -4,7 +4,7 @@ export const hubble = {
   sources: {
     mission: 'https://science.nasa.gov/mission/hubble/',
     coordinates: 'https://science.nasa.gov/mission/hubble/observatory/',
-    photo: 'https://science.nasa.gov/image-detail/hubble-released-at-end-of-sm4/',
+    photo: 'https://commons.wikimedia.org/wiki/File:View_of_Hubble_after_Being_Released_from_the_Shuttle_Atlantis_%2827625166303%29.jpg',
   },
   copy: {
     ru: {

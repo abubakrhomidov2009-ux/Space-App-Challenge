@@ -12,6 +12,7 @@ import MissionDialog from './mission-dialog';
 import LanguageSettings from './language-settings';
 import { museumCopy } from './languages';
 import { homepageMissionIds, missions, type MissionId } from './missions';
+import { missionExtras } from './routes';
 import styles from './museum.module.css';
 
 export default function Museum() {
@@ -20,8 +21,8 @@ export default function Museum() {
   const sky = useRef<HTMLDivElement>(null);
   const explore = useRef<HTMLElement>(null);
   const finale = useRef<HTMLElement>(null);
-  const input = useRef<SceneInput>({ destination: 'moon', moon: 0, mars: Math.PI * 0.43, space: 0, dragging: false, resumeAt: 0, mission: null, missionCovered: false });
-  const { openMission, dialogProps } = useMissionDialog(input, rotation);
+  const input = useRef<SceneInput>({ destination: 'moon', moon: 0, mars: Math.PI * 0.43, space: 0, dragging: false, hovering: false, resumeAt: 0, mission: null, missionCovered: false });
+  const { selectedMission, openMission: openStory, dialogProps } = useMissionDialog(input, rotation);
   const drag = useRef<{ id: number; x: number } | null>(null);
   const [destination, setDestination] = useState<Exclude<Destination, 'space'>>('moon');
   const [status, setStatus] = useState<SceneStatus>({ moon: 'loading', mars: 'loading', earth: 'loading', space: 'loading' });
@@ -38,6 +39,9 @@ export default function Museum() {
     let cancelled = false;
     let cleanup: (() => void) | undefined;
 
+    // If the scene is slow or unavailable the text still appears.
+    const reveal = window.setTimeout(() => host.parentElement?.setAttribute('data-intro', 'up'), 4500);
+
     import('./scene').then(({ mountScene }) => {
       if (cancelled) return;
       cleanup = mountScene(host, gallery, ending, input.current, markers.current, (planet, phase) => {
@@ -49,6 +53,7 @@ export default function Museum() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(reveal);
       cleanup?.();
     };
   }, []);
@@ -58,6 +63,31 @@ export default function Museum() {
     input.current.resumeAt = performance.now() + 3000;
   }
 
+  // Pause the idle spin while a point is under the pointer or focused,
+  // so the target stays still long enough to be clicked.
+  // The release is delayed: while the globe coasts to a stop the point can
+  // drift out from under the cursor and back, and that must not restart the spin.
+  const releaseTimer = useRef<number>(0);
+
+  function holdRotation() {
+    window.clearTimeout(releaseTimer.current);
+    input.current.hovering = true;
+  }
+
+  function releaseRotation() {
+    window.clearTimeout(releaseTimer.current);
+    releaseTimer.current = window.setTimeout(() => {
+      input.current.hovering = false;
+      input.current.resumeAt = performance.now() + 400;
+    }, 350);
+  }
+
+  function openMission(id: MissionId) {
+    // The marker hides on open, so its pointerleave may never fire.
+    window.clearTimeout(releaseTimer.current);
+    input.current.hovering = false;
+    openStory(id);
+  }
 
   const message = unavailable
     ? copy.unavailable
@@ -75,14 +105,17 @@ export default function Museum() {
         <MobileMenu language={language} />
         <LanguageSettings language={language} onChange={changeLanguage} />
       </header>
-      <MissionDialog {...dialogProps} language={language} onLanguageChange={changeLanguage} />
+      <MissionDialog {...dialogProps} {...missionExtras(selectedMission)}
+        language={language} onLanguageChange={changeLanguage} />
       {homepageMissionIds.map((id) => {
         const name = missions[id].copy[language].name;
         return (
           <button key={id} ref={(element) => {
             if (element) markers.current[id] = element;
             else delete markers.current[id];
-          }} hidden className={styles.marker} onClick={() => openMission(id)} aria-label={name}>
+          }} hidden className={styles.marker} onClick={() => openMission(id)} aria-label={name}
+            onPointerEnter={holdRotation} onPointerLeave={releaseRotation}
+            onFocus={holdRotation} onBlur={releaseRotation}>
             <span className={styles.markerCore} aria-hidden="true" />
             <span className={styles.markerName} aria-hidden="true">{name}</span>
           </button>
@@ -90,7 +123,7 @@ export default function Museum() {
       })}
       <div ref={sky} className={styles.sky} aria-hidden="true" />
       <section className={styles.hero} aria-labelledby="museum-title">
-        <Image className={styles.logo} src="/tmas-logo.jpg" width={480} height={480} preload
+        <Image className={styles.logo} src="/tmas-logo.webp" width={480} height={480} preload
           alt="TMAS — Museum of Abandoned Space" />
         <h1 id="museum-title">{copy.title}</h1>
         <p>{copy.intro}</p>
@@ -123,11 +156,17 @@ export default function Museum() {
               input.current.resumeAt = performance.now() + 3000;
             }}
           />
-          <button className={styles.next} onClick={() => {
+          <button className={styles.next} data-next={nextDestination} onClick={() => {
             input.current.destination = nextDestination;
             setDestination(nextDestination);
           }} aria-label={`${copy.show} · ${copy[nextDestination]}`}>
-            <span><i className="nav-arrow" aria-hidden="true" /></span>
+            <span key={nextDestination} className={styles.nextDisc} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25"
+                strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12h15M13.5 6.5 19 12l-5.5 5.5" />
+              </svg>
+            </span>
+            <span className={styles.nextName} aria-hidden="true">{copy[nextDestination]}</span>
           </button>
           <p className={styles.hint} role="status">{message}</p>
         </div>

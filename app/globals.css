@@ -4,6 +4,34 @@
   --foreground: #f5f5f5;
   --muted: #b5b5b5;
   --line: #444;
+
+  /* Surfaces. All neutral: no blue in the blacks. */
+  --surface: #0a0a0b;
+
+  /* Acrylic: a flat translucent tint and a blur. No outline, no highlight, no shadow. */
+  --glass: rgb(18 18 20 / .5);
+  --glass-hover: rgb(70 70 76 / .5);
+  --glass-menu: rgb(18 18 20 / .8);
+  --glass-blur: blur(24px) saturate(1.5);
+}
+
+/* Without blur support, or when the system asks for less transparency, the glass becomes solid. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass: #262628;
+    --glass-hover: #38383c;
+    --glass-menu: #1a1a1c;
+    --glass-blur: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass: #262628;
+    --glass-hover: #38383c;
+    --glass-menu: #1a1a1c;
+    --glass-blur: none;
+  }
 }
 
 body {
@@ -20,6 +48,8 @@ button { font: inherit; cursor: pointer; }
 :focus-visible { outline: 2px solid white; outline-offset: 5px; }
 
 html { scrollbar-gutter: stable; }
+
+html:has(main > section[class*="hero"]) { scroll-snap-type: y proximity; }
 
 html:has(dialog[open]) { overflow: hidden; }
 
@@ -55,3 +85,8 @@ html:has(dialog[open]) { overflow: hidden; }
 }
 
 .nav-arrow-left { transform: rotate(180deg); }
+
+/* A reordering list animates its own cards; the page behind it must not cross-fade. */
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; }
+::view-transition-group(*) { animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .7, .2, 1); }

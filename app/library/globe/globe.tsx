@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import MissionDialog from '../../museum/mission-dialog';
 import { useMissionDialog } from '../../museum/use-mission-dialog';
+import { missionExtras } from '../../museum/routes';
 import { useEffect, useRef, useState } from 'react';
 import LanguageSettings from '../../museum/language-settings';
 import { museumCopy } from '../../museum/languages';
@@ -15,6 +16,26 @@ import styles from '../library.module.css';
 
 const destinations = ['moon', 'mars', 'space'] as const;
 
+// Two small satellites circling the Earth disc of the orbit world.
+function Satellites() {
+  return (
+    <span className={museumStyles.orbits} aria-hidden="true">
+      <span className={museumStyles.orbit}><i /></span>
+      <span className={museumStyles.orbit}><i /></span>
+    </span>
+  );
+}
+
+// "1 mission", "2 missions", with the right Russian forms; Tajik does not change the noun.
+function missionCount(count: number, language: string) {
+  if (language === 'en') return `${count} ${count === 1 ? 'mission' : 'missions'}`;
+  if (language === 'tg') return `${count} миссия`;
+  const tens = count % 100;
+  const ones = count % 10;
+  const word = tens >= 11 && tens <= 14 ? 'миссий' : ones === 1 ? 'миссия' : ones >= 2 && ones <= 4 ? 'миссии' : 'миссий';
+  return `${count} ${word}`;
+}
+
 export default function Globe({ initialWorld }: { initialWorld: Destination }) {
   const { language, changeLanguage } = useLanguage();
   const labels = libraryCopy[language];
@@ -26,10 +47,10 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
   const markers = useRef<Partial<Record<MissionId, HTMLButtonElement>>>({});
   const input = useRef<SceneInput>({
     destination: initialWorld, moon: 0, mars: Math.PI * .43, space: 0,
-    dragging: false, resumeAt: 0, mission: null, missionCovered: false,
+    dragging: false, hovering: false, resumeAt: 0, mission: null, missionCovered: false,
   });
   const rotation = useRef<HTMLDivElement>(null);
-  const { openMission, dialogProps } = useMissionDialog(input, rotation);
+  const { selectedMission, openMission, dialogProps } = useMissionDialog(input, rotation);
   const drag = useRef<{ id: number; x: number } | null>(null);
 
   useEffect(() => {
@@ -52,6 +73,30 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
       cleanup?.();
     };
   }, []);
+
+  // Hold the idle spin while a point is under the pointer or focused, so it can be clicked.
+  // The release is delayed: a coasting globe can slide the point out and back under the cursor.
+  const releaseTimer = useRef<number>(0);
+
+  function holdRotation() {
+    window.clearTimeout(releaseTimer.current);
+    input.current.hovering = true;
+  }
+
+  function releaseRotation() {
+    window.clearTimeout(releaseTimer.current);
+    releaseTimer.current = window.setTimeout(() => {
+      input.current.hovering = false;
+      input.current.resumeAt = performance.now() + 400;
+    }, 350);
+  }
+
+  function open(id: MissionId) {
+    // The point hides on open, so its pointerleave may never fire.
+    window.clearTimeout(releaseTimer.current);
+    input.current.hovering = false;
+    openMission(id);
+  }
 
   function rotate(delta: number) {
     input.current[input.current.destination] += delta;
@@ -77,7 +122,7 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
         <Link href="/"><i className="nav-arrow nav-arrow-left" aria-hidden="true" /> {labels.home}</Link>
         <LanguageSettings language={language} onChange={changeLanguage} />
       </header>
-      <MissionDialog {...dialogProps} language={language} onLanguageChange={changeLanguage} />
+      <MissionDialog {...dialogProps} {...missionExtras(selectedMission)} language={language} onLanguageChange={changeLanguage} />
       <div className={styles.globe}>
         <div ref={host} className={styles.globeCanvas} aria-hidden="true" />
         <div ref={rotation} className={styles.globeDrag} tabIndex={0} role="group" aria-label={names[world]}
@@ -110,21 +155,44 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
           }} hidden
             className={`${museumStyles.marker} ${styles.globeMarker}`}
             aria-label={missions[id].copy[language].name}
-            onClick={() => openMission(id)}>
+            onClick={() => open(id)}
+            onPointerEnter={holdRotation} onPointerLeave={releaseRotation}
+            onFocus={holdRotation} onBlur={releaseRotation}>
             <span className={museumStyles.markerCore} aria-hidden="true" />
             <span className={museumStyles.markerName} aria-hidden="true">{missions[id].copy[language].name}</span>
           </button>
         ))}
-        <button className={`${museumStyles.next} ${styles.previousWorld}`}
+        <button className={`${museumStyles.next} ${styles.previousWorld}`} data-next={previous} data-side="previous"
           aria-label={`← ${copy.show} · ${names[previous]}`} onClick={() => switchWorld(-1)}>
-          <span><i className="nav-arrow nav-arrow-left" aria-hidden="true" /></span>
+          <span key={previous} className={museumStyles.nextDisc} aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25"
+              strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12h15M13.5 6.5 19 12l-5.5 5.5" />
+            </svg>
+          </span>
+          {previous === 'space' && <Satellites />}
+          <span className={museumStyles.nextName} aria-hidden="true">{names[previous]}</span>
         </button>
-        <button className={`${museumStyles.next} ${styles.nextWorld}`}
+        <button className={`${museumStyles.next} ${styles.nextWorld}`} data-next={next} data-side="next"
           aria-label={`→ ${copy.show} · ${names[next]}`} onClick={() => switchWorld(1)}>
-          <span><i className="nav-arrow" aria-hidden="true" /></span>
+          <span key={next} className={museumStyles.nextDisc} aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25"
+              strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12h15M13.5 6.5 19 12l-5.5 5.5" />
+            </svg>
+          </span>
+          {next === 'space' && <Satellites />}
+          <span className={museumStyles.nextName} aria-hidden="true">{names[next]}</span>
         </button>
         <p className={styles.globeStatus} role="status">
-          {unavailable ? copy.unavailable : status[world] === 'error' ? copy.error : status[world] === 'loading' ? copy.loading : names[world]}
+          {unavailable || status[world] !== 'ready'
+            ? <span>{unavailable ? copy.unavailable : status[world] === 'error' ? copy.error : copy.loading}</span>
+            : (
+              <span key={world} className={styles.globeStatusText}>
+                <strong>{names[world]}</strong>
+                <small>{missionCount(globeMissionIds.filter((id) => missions[id].world === world).length, language)}</small>
+              </span>
+            )}
         </p>
       </div>
     </main>

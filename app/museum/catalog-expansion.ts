@@ -5,7 +5,7 @@ export const catalogExpansion = {
     sources: {
       mission: 'https://www.nasa.gov/missions/apollo/apollo-17-mission-details/',
       coordinates: 'https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html',
-      photo: 'https://www.nasa.gov/image-article/apollo-17s-moonship/',
+      photo: 'https://commons.wikimedia.org/wiki/File:Apollo_17_first_test_of_the_lunar_rover_AS17-147-22527HR.jpg',
     },
     copy: {
       ru: { name: 'Apollo 17 · Challenger', location: 'Луна · долина Таурус — Литтров', intro: 'Посадочная ступень модуля Challenger осталась на месте высадки Apollo 17.', story: [

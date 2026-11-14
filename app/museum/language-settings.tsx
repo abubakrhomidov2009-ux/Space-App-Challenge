@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { languages, museumCopy, type Language } from './languages';
 import styles from './museum.module.css';
 
@@ -7,26 +7,54 @@ export default function LanguageSettings({ language, onChange }: {
   onChange: (language: Language) => void;
 }) {
   const settings = useRef<HTMLDetailsElement>(null);
+  const [open, setOpen] = useState(false);
   const label = museumCopy[language].language;
 
-  function close() {
+  function close(restoreFocus = false) {
     if (!settings.current) return;
     settings.current.open = false;
-    settings.current.querySelector('summary')?.focus({ preventScroll: true });
+    if (restoreFocus) settings.current.querySelector('summary')?.focus({ preventScroll: true });
   }
 
+  // While the menu is open, any scroll or a press outside it closes it.
+  // The press covers the globe switch button and the rotation area.
+  useEffect(() => {
+    if (!open) return;
+    const closeOnScroll = () => close();
+    const closeOutside = (event: PointerEvent) => {
+      if (!settings.current?.contains(event.target as Node)) close();
+    };
+    window.addEventListener('scroll', closeOnScroll, { passive: true });
+    window.addEventListener('wheel', closeOnScroll, { passive: true });
+    document.addEventListener('pointerdown', closeOutside, true);
+    return () => {
+      window.removeEventListener('scroll', closeOnScroll);
+      window.removeEventListener('wheel', closeOnScroll);
+      document.removeEventListener('pointerdown', closeOutside, true);
+    };
+  }, [open]);
+
   return (
-    <details ref={settings} className={styles.languageSettings} onKeyDown={(event) => {
-      if (event.key !== 'Escape' || !event.currentTarget.open) return;
-      event.preventDefault();
-      close();
-    }}>
-      <summary aria-label={label}><span aria-hidden="true">⚙︎</span></summary>
+    <details ref={settings} className={styles.languageSettings}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || !event.currentTarget.open) return;
+        event.preventDefault();
+        close(true);
+      }}>
+      <summary aria-label={label}>
+        <svg className={styles.languageIcon} viewBox="0 0 20 20" fill="none" stroke="currentColor"
+          strokeWidth="1.3" strokeLinecap="round" aria-hidden="true">
+          <circle cx="10" cy="10" r="7.5" />
+          <path d="M2.5 10h15M10 2.5c-2.4 2.2-3.6 4.7-3.6 7.5s1.2 5.3 3.6 7.5c2.4-2.2 3.6-4.7 3.6-7.5S12.4 4.7 10 2.5Z" />
+        </svg>
+        <span className={styles.languageCode} aria-hidden="true">{language}</span>
+      </summary>
       <div className={styles.languageMenu} role="group" aria-label={label}>
         <p>{label}</p>
         {(Object.keys(languages) as Language[]).map((option) => (
           <button key={option} type="button" lang={option} aria-pressed={language === option}
-            onClick={() => { onChange(option); close(); }}>
+            onClick={() => { onChange(option); close(true); }}>
             {languages[option]}
             {language === option && <span aria-hidden="true">✓</span>}
           </button>

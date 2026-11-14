@@ -29,15 +29,15 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 2rem var(--gutter) 3rem;
+  /* The lower third belongs to the Moon's horizon. */
+  padding: 2rem var(--gutter) clamp(7rem, 31svh, 16rem);
 }
 
 .logo {
   display: block;
-  width: min(62vw, 18rem, 40svh);
+  width: min(62vw, 16rem, 32svh);
   height: auto;
   margin-bottom: clamp(-2rem, -3vw, -.8rem);
-  mix-blend-mode: screen;
 }
 
 .hero h1,
@@ -51,6 +51,25 @@
 
 .hero h1 { font-size: clamp(2.9rem, 8.5vw, 8rem); }
 
+/* Opening: the text stays hidden until the planet is on its way up, then the logo, the
+   headline and the line under it surface in turn. Opacity and transform only, so it runs
+   on the compositor and stays smooth while the scene is busy. */
+.hero .logo, .hero h1, .hero p { opacity: 0; will-change: opacity, transform; }
+
+.museum[data-intro='up'] .hero .logo,
+.museum[data-intro='up'] .hero h1,
+.museum[data-intro='up'] .hero p { animation: heroText .9s cubic-bezier(.2, .7, .2, 1) both; }
+
+.museum[data-intro='up'] .hero h1 { animation-delay: .1s; }
+.museum[data-intro='up'] .hero p { animation-delay: .22s; }
+
+@keyframes heroText { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero .logo, .hero h1, .hero p { opacity: 1; will-change: auto; }
+  .museum[data-intro='up'] .hero .logo, .museum[data-intro='up'] .hero h1, .museum[data-intro='up'] .hero p { animation: none; }
+}
+
 .hero p,
 .earthCopy p {
   max-width: 32ch;
@@ -61,6 +80,10 @@
 }
 
 .explore { min-height: 160svh; }
+
+/* Rest points: when a scroll ends close to one of these, the page settles onto it,
+   so the globe is never left half-risen. Proximity keeps free scrolling everywhere else. */
+.hero, .explore, .finale { scroll-snap-align: start; }
 
 .exploreFrame {
   position: sticky;
@@ -87,9 +110,10 @@
 .rotation:active { cursor: grabbing; }
 
 .next {
+  --size: 4rem;
   display: grid;
   justify-items: center;
-  gap: .4rem;
+  gap: .85rem;
   position: absolute;
   right: clamp(1rem, 3vw, 3rem);
   top: 50%;
@@ -100,18 +124,177 @@
   color: var(--foreground);
 }
 
-.next span {
-  display: grid;
-  width: 3.25rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border: 1px solid #85858d;
-  border-radius: 50%;
-  background: #09090dcc;
-  font-size: 1.45rem;
+/* The button is a small copy of the world it leads to. */
+.next[data-next='moon'] {
+  --land: #9fa2ab;
+  --map: url('/planets/moon.webp');
+  --turn-from: 52%;
+  --turn-to: 17%;
+  --halo: #b3c0dc4d;
 }
 
-.next:hover span { background: #f4f4f5; color: #070709; }
+.next[data-next='mars'] {
+  --land: #a8512f;
+  --map: url('/planets/mars.webp');
+  --turn-from: 18%;
+  --turn-to: 58%;
+  --halo: #e8834e59;
+}
+
+.next[data-next='space'] {
+  --land: #1c3f86;
+  --map: url('/planets/earth.webp');
+  --turn-from: 30%;
+  --turn-to: 68%;
+  --halo: #6fa3ee59;
+}
+
+.nextDisc {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  width: var(--size);
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--land);
+  color: #fff;
+  box-shadow: 0 18px 44px #000d, 0 0 0 0 var(--halo);
+  transition: transform .9s cubic-bezier(.2, .7, .2, 1), box-shadow .9s cubic-bezier(.2, .7, .2, 1);
+  animation: worldArrive 1s cubic-bezier(.2, .7, .2, 1) backwards;
+}
+
+/* Surface: the real equator band of the world, three disc-widths long. */
+.nextDisc::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--map) var(--turn-from) 50% / auto 100% repeat-x;
+  transition: background-position 3.6s cubic-bezier(.2, .6, .2, 1);
+}
+
+/* Sunlight from the upper left; the far edge falls into shadow. */
+.nextDisc::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, transparent 0 26%, #0506064d 54%, #05060699 76%, #050606f2 100%),
+    #05060642;
+}
+
+.nextDisc svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  stroke-width: 1.8;
+  /* A soft dark halo keeps the arrow readable over light and dark terrain. */
+  filter: drop-shadow(0 0 3px #000b) drop-shadow(0 1px 2px #0009);
+  transition: transform .7s cubic-bezier(.2, .7, .2, 1);
+}
+
+.nextName {
+  color: #c9cbd3;
+  font-size: .8125rem;
+  letter-spacing: .02em;
+  text-shadow: 0 1px 10px #000;
+  transition: color .5s ease;
+}
+
+.next:hover .nextDisc,
+.next:focus-visible .nextDisc {
+  transform: scale(1.07);
+  box-shadow: 0 24px 54px #000e, 0 0 48px 2px var(--halo);
+}
+
+.next:hover .nextDisc::before,
+.next:focus-visible .nextDisc::before { background-position: var(--turn-to) 50%; }
+
+.next:hover .nextDisc svg,
+.next:focus-visible .nextDisc svg { transform: translateX(4px); }
+
+.next:hover .nextName,
+.next:focus-visible .nextName { color: white; }
+
+.next:active .nextDisc { transform: scale(.96); transition-duration: .2s; }
+
+/* A button that leads back: the arrow points left and the world slides in from the left. */
+/* Satellites on the orbit world's disc. Each follows a tilted ellipse (a sine in x and a sine
+   a quarter turn later in y) and fades out while it passes behind the planet. */
+.orbits {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--size) / 2);
+  width: calc(var(--size) * 1.5);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+
+.orbit {
+  --turn: 9s;
+  --reach: calc(var(--size) * .74);
+  --depth: calc(var(--size) * .2);
+  position: absolute;
+  inset: 0;
+  transform: rotate(-24deg);
+}
+
+.orbit:nth-child(2) {
+  --turn: 13s;
+  --reach: calc(var(--size) * .63);
+  --depth: calc(var(--size) * .15);
+  transform: rotate(31deg);
+}
+
+.orbit i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  animation: satelliteX calc(var(--turn) / 2) cubic-bezier(.37, 0, .63, 1) infinite alternate;
+}
+
+.orbit i::before {
+  content: '';
+  position: absolute;
+  width: .42rem;
+  height: .42rem;
+  margin: -.21rem 0 0 -.21rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 .5rem #fff9;
+  animation:
+    satelliteY calc(var(--turn) / 2) calc(var(--turn) / -4) cubic-bezier(.37, 0, .63, 1) infinite alternate,
+    satelliteDim var(--turn) linear infinite;
+}
+
+.orbit:nth-child(2) i,
+.orbit:nth-child(2) i::before { animation-direction: alternate-reverse, normal; }
+.orbit:nth-child(2) i::before { width: .32rem; height: .32rem; margin: -.16rem 0 0 -.16rem; }
+
+@keyframes satelliteX { from { translate: calc(var(--reach) * -1) 0; } to { translate: var(--reach) 0; } }
+@keyframes satelliteY { from { translate: 0 calc(var(--depth) * -1); } to { translate: 0 var(--depth); } }
+
+/* Hidden while it is behind the disc, in the middle of the far half of the path. */
+@keyframes satelliteDim {
+  0%, 56% { opacity: 1; }
+  63%, 87% { opacity: 0; }
+  94%, 100% { opacity: 1; }
+}
+
+.next[data-side='previous'] { --arrive: -18px; }
+.next[data-side='previous'] .nextDisc svg { transform: scaleX(-1); }
+
+.next[data-side='previous']:hover .nextDisc svg,
+.next[data-side='previous']:focus-visible .nextDisc svg { transform: scaleX(-1) translateX(4px); }
+
+@keyframes worldArrive {
+  from { opacity: 0; transform: translateX(var(--arrive, 18px)) scale(.7); }
+  to { opacity: 1; transform: none; }
+}
 
 .hint {
   position: absolute;
@@ -157,6 +340,9 @@
 
 .marker {
   position: fixed;
+  top: 0;
+  left: 0;
+  will-change: translate;
   z-index: 4;
   display: grid;
   place-items: center;
@@ -182,17 +368,17 @@
   pointer-events: none;
 }
 
+/* Outer halo is pure light, with no ring around it. */
 .marker::before {
-  inset: 4px;
-  border: 1px solid #ffffff50;
-  background: radial-gradient(circle, #ffffff28, transparent 72%);
+  inset: 0;
+  background: radial-gradient(circle, #ffffff3d, #ffffff12 45%, transparent 70%);
   animation: markerPulse 2.5s ease-in-out infinite;
 }
 
 .marker::after {
-  inset: 15px;
-  border: 1px solid #ffffffc0;
-  box-shadow: 0 0 10px #ffffff42;
+  inset: 16px;
+  border: 1px solid #ffffffb8;
+  box-shadow: 0 0 12px #ffffff3d;
 }
 
 .markerCore {
@@ -206,12 +392,10 @@
 .markerName {
   position: absolute;
   left: calc(100% + .25rem);
-  padding: .32rem .58rem;
+  padding: .4rem .75rem;
   color: white;
-  background: #1011169c;
-  border: 1px solid #ffffff20;
-  border-radius: .45rem;
-  backdrop-filter: blur(8px);
+  background: rgb(18 18 20 / .78);
+  border-radius: .55rem;
   font-size: .875rem;
   white-space: nowrap;
   opacity: 0;
@@ -246,13 +430,16 @@
 
 .mission::backdrop { background: transparent; }
 
+/* The dialog takes focus on open, so no button shows a ring before the keyboard is used. */
+.mission:focus { outline: none; }
+
 .missionPanel {
   position: absolute;
   inset: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, .92fr);
   align-items: center;
-  background: #0b0c10;
+  background: var(--surface);
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -266,13 +453,32 @@
   position: fixed;
   z-index: 2;
   inset: 1.25rem auto auto max(.5rem, env(safe-area-inset-left));
-  padding: .65rem .95rem;
-  border: 1px solid #ffffff30;
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .72rem 1.25rem .72rem 1.05rem;
+  border: 0;
   border-radius: 999px;
-  background: #10121873;
-  backdrop-filter: blur(12px);
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
   color: white;
+  font-size: 1rem;
+  line-height: 1.25;
+  transition: background .3s ease;
 }
+
+.missionBack:hover { background: var(--glass-hover); }
+
+/* Drawn arrow, centred on the text; it steps back a little on hover. */
+.missionBackIcon {
+  flex: none;
+  width: 1.05em;
+  height: 1.05em;
+  transition: transform .45s cubic-bezier(.2, .7, .2, 1);
+}
+
+.missionBack:hover .missionBackIcon,
+.missionBack:focus-visible .missionBackIcon { transform: translateX(-3px); }
 
 .missionPhoto {
   position: relative;
@@ -292,38 +498,39 @@
   position: absolute;
   inset: auto auto 1.5rem var(--gutter);
   max-width: 82%;
-  padding: .4rem .65rem;
-  background: radial-gradient(ellipse at center, #0b0c108c, transparent 76%);
-  text-shadow: 0 1px 5px #000, 0 1px 12px #000;
-  color: #e2e2e8;
-  font-size: .8rem;
+}
+
+.missionPhoto .sourceChip {
+  padding: .6rem 1rem .6rem 1.1rem;
+  font-size: .9375rem;
 }
 
 .missionCopy {
   max-width: 39rem;
-  padding: 5rem var(--gutter) 3rem clamp(1.5rem, 4vw, 5rem);
-  line-height: 1.6;
+  padding: clamp(3.25rem, 7svh, 4.5rem) var(--gutter) 2rem clamp(1.5rem, 4vw, 5rem);
+  font-size: clamp(.98rem, min(.94rem + .3vw, 2.4svh), 1.15rem);
+  line-height: 1.57;
   color: #d2d4de;
 }
 
-.missionLocation { font-size: .875rem; }
+.missionLocation { color: #b6bbc9; font-size: 1.0625rem; }
 
 .missionCopy h2 {
   margin: 0;
   color: white;
-  font-size: clamp(3rem, 7vw, 7rem);
+  font-size: clamp(3rem, min(7vw, 13svh), 7rem);
   line-height: .95;
   letter-spacing: -.05em;
 }
 
-.missionIntro { color: white; font-size: clamp(1.1rem, 2.2vw, 1.45rem); }
-.missionSources { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; font-size: .875rem; }
+.missionIntro { color: white; font-size: clamp(1.1rem, min(2.2vw, 3svh), 1.45rem); }
+.missionSources { display: flex; flex-wrap: wrap; gap: .7rem; margin: 1.5rem 0 0; }
 
 .missionFog {
-  --fog-highlight: #53678280;
-  --fog-shadow: #27374eac;
-  --fog-core: #141b27;
-  --fog-edge: #07090e;
+  --fog-highlight: #7b7e8780;
+  --fog-shadow: #3c3e44ac;
+  --fog-core: #1c1d20;
+  --fog-edge: #08080a;
   position: absolute;
   inset: 0;
   z-index: 3;
@@ -433,7 +640,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .markerName { transition: none; }
+  .markerName, .nextDisc, .nextDisc::before, .nextDisc svg, .nextName { transition: none; }
+  .nextDisc, .languageSettings[open] .languageMenu { animation: none; }
+  .orbit i, .orbit i::before { animation: none; }
+  .next:hover .nextDisc, .next:focus-visible .nextDisc { transform: none; }
+  .next:hover .nextDisc svg, .next:focus-visible .nextDisc svg { transform: none; }
+  .next[data-side='previous']:hover .nextDisc svg, .next[data-side='previous']:focus-visible .nextDisc svg { transform: scaleX(-1); }
   .mission[open] .missionPanel { opacity: 1; }
   .missionFog { display: none; }
   .marker::before, .mission[open] .missionPanel, .mission[open] .missionFog,
@@ -448,17 +660,39 @@
 }
 
 .languageSettings summary {
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
   height: 2.75rem;
   margin-left: auto;
-  border: 1px solid #ffffff30;
-  border-radius: 50%;
-  background: #101218a8;
+  padding: 0 1.05rem 0 .95rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  transition: background .3s ease;
   color: white;
-  font: 1.45rem/1 system-ui, sans-serif;
   cursor: pointer;
+  list-style: none;
+  width: max-content;
+}
+
+.languageIcon {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform .6s cubic-bezier(.2, .7, .2, 1);
+}
+
+.languageSettings summary:hover .languageIcon,
+.languageSettings[open] .languageIcon { transform: rotate(60deg); }
+
+.languageCode {
+  font-size: .9rem;
+  font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
 .languageSettings summary::-webkit-details-marker { display: none; }
@@ -470,18 +704,26 @@
   display: grid;
   gap: .2rem;
   min-width: 11rem;
-  padding: .75rem;
-  border: 1px solid #ffffff30;
-  border-radius: .6rem;
-  background: #151820ed;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 10px 32px #0006;
+  padding: .6rem;
+  border-radius: .9rem;
+  background: var(--glass-menu);
+  backdrop-filter: var(--glass-blur);
   color: white;
+}
+
+.languageSettings[open] .languageMenu {
+  transform-origin: top right;
+  animation: menuIn .32s cubic-bezier(.2, .7, .2, 1);
+}
+
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-8px) scale(.96); }
+  to { opacity: 1; transform: none; }
 }
 
 .languageMenu p {
   margin: .15rem .6rem .3rem;
-  color: #b5c0d3;
+  color: #b6b6bd;
   font-size: .78rem;
 }
 
@@ -493,31 +735,356 @@
   padding: .5rem .65rem;
   align-items: center;
   text-align: left;
-  color: #eef0f6;
+  color: #f0f0f3;
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: .4rem;
+  border: 0;
+  border-radius: .55rem;
+  transition: background .2s ease;
 }
 
-.languageMenu button:hover { background: #ffffff10; }
+.languageMenu button:hover { background: #ffffff0f; }
 
-.languageMenu button[aria-pressed='true'] {
-  background: #b8cfef1a;
-  border-color: #b8cfef38;
-}
+.languageMenu button[aria-pressed='true'] { background: #ffffff1f; }
 
-.languageMenu button span { color: #c4d9fa; }
+.languageMenu button span { color: white; }
 
 .languageSettings summary:hover,
-.languageSettings[open] summary {
-  background: #202735;
-  border-color: #b8cfef60;
-}
+.languageSettings[open] summary { background: var(--glass-hover); }
+
+@media (prefers-reduced-motion: reduce) { .languageIcon { transition: none; } }
 
 .missionPanel .languageSettings { z-index: 2; }
 
 .missionPhoto[data-world='mars'] img {
   filter: saturate(.8) brightness(.83);
+}
+
+/* Route of a rover across its world, drawn from NASA traverse data. */
+.route {
+  --accent: #f0925b;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.4rem 2rem;
+  align-items: end;
+  margin: 0;
+  padding: 0 var(--gutter) 3rem clamp(1.5rem, 4vw, 5rem);
+  container-type: inline-size;
+}
+
+.route[data-world='moon'] { --accent: #cfd9ee; }
+
+.routeMap {
+  --map-h: min(25rem, 54svh);
+  display: block;
+  /* Tall routes are limited by height, wide ones by the column width. */
+  width: min(100%, calc(var(--map-h) * var(--ar)));
+  height: auto;
+  aspect-ratio: var(--ar);
+  /* No plate behind the route: the line is drawn straight onto the page. */
+  overflow: visible;
+}
+
+.routeAhead {
+  fill: none;
+  stroke: #ffffff1f;
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+
+.routeDrawn {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 0 4000;
+  filter: drop-shadow(0 0 5px var(--accent));
+}
+
+.routeStart { fill: var(--accent); }
+
+.routeRover circle { fill: #fff; }
+
+.routeRover .routePulse {
+  fill: var(--accent);
+  opacity: .4;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: routePulse 2.2s ease-out infinite;
+}
+
+@keyframes routePulse {
+  from { opacity: .5; transform: scale(1); }
+  to { opacity: 0; transform: scale(3.2); }
+}
+
+.routeNote {
+  /* A dark halo keeps labels readable where the track passes behind them. */
+  paint-order: stroke fill;
+  stroke: #0a0a0b;
+  stroke-width: 8px;
+  stroke-linejoin: round;
+  fill: #aeb3c2;
+  font: 400 31px 'IBM Plex Sans', sans-serif;
+  transition: opacity .8s ease;
+}
+
+.routeNote[data-visible='false'] { opacity: 0; }
+
+.routeEndMark { transition: opacity .8s ease; }
+.routeEndMark[data-visible='false'] { opacity: 0; }
+
+.routeEndMark .routePulse {
+  fill: var(--accent);
+  opacity: .4;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: routePulse 2.2s ease-out infinite;
+}
+
+.routeScale {
+  fill: none;
+  stroke: #9ea3b3;
+  stroke-width: 2.4;
+}
+
+.routeStats {
+  min-width: 0;
+  display: grid;
+  align-content: end;
+  gap: .25rem;
+}
+
+.routeStats p { margin: 0; }
+
+.routeLabel { color: #b0b5c4; font-size: 1.0625rem; }
+
+.routeKm {
+  white-space: nowrap;
+  color: white;
+  font-size: clamp(2.1rem, 11cqi, 4.5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.routeKm small {
+  margin-left: .2em;
+  color: #9ea3b3;
+  font-size: .3em;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.routeSub,
+.routeSol {
+  color: #d0d3de;
+  font-size: 1.0625rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.routeControls {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.routeControls input {
+  --progress: 0%;
+  flex: 1;
+  height: 1.5rem;
+  margin: 0;
+  appearance: none;
+  background:
+    linear-gradient(var(--accent), var(--accent)) left center / var(--progress) 3px no-repeat,
+    linear-gradient(#ffffff26, #ffffff26) left center / 100% 3px no-repeat;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.routeControls input::-webkit-slider-thumb {
+  width: 1rem;
+  height: 1rem;
+  appearance: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 10px #000b, 0 0 16px var(--accent);
+}
+
+.routeControls input::-moz-range-thumb {
+  width: 1rem;
+  height: 1rem;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 10px #000b, 0 0 16px var(--accent);
+}
+
+.routeControls button {
+  padding: .55rem 1.1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  color: #eceef5;
+  font-size: 1rem;
+  transition: background .35s ease, color .35s ease;
+}
+
+.routeControls button:hover { background: var(--glass-accent); color: white; }
+
+.routeCredit,
+.routeOdometer {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.routeOdometer { margin-top: -.4rem; }
+
+/* A tall map has a fixed width from its own proportions; a percentage inside an auto column would stretch it. */
+.missionPanel[data-wide='false'] .routeMap { width: calc(var(--map-h) * var(--ar)); }
+
+/* A wide map takes the full width and the numbers go under it, until the desktop layout. */
+@media (max-width: 1099px) {
+  .missionPanel[data-wide='true'] .route { grid-template-columns: minmax(0, 1fr); }
+  .missionPanel[data-wide='true'] .routeStats { grid-template-columns: auto 1fr; align-items: end; column-gap: 1rem; }
+  .missionPanel[data-wide='true'] .routeLabel { grid-column: 1 / -1; }
+  .missionPanel[data-wide='true'] .routeKm { grid-row: 2 / span 2; }
+}
+
+/* Tablet: the route sits under the text, in the text column. */
+@media (min-width: 741px) {
+  .missionPanel[data-route='true'] .missionPhoto { grid-row: 1 / span 2; }
+  .missionPanel[data-route='true'] .route { grid-column: 2; }
+  .missionPanel[data-route='true'] .missionCopy { padding-bottom: 2rem; }
+}
+
+/* Desktop: text and route stand side by side, so the story fits one screen. */
+@media (min-width: 1100px) {
+  .missionPanel[data-route='true'] {
+    grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr) minmax(0, .68fr);
+  }
+
+  .missionPanel[data-route='true'] .missionPhoto { grid-row: auto; }
+  .missionPanel[data-route='true'] .missionSources { gap: .55rem; }
+  .missionPanel[data-route='true'] .sourceChip { padding: .7rem 1rem .7rem 1.1rem; font-size: .9375rem; }
+  .missionPanel[data-route='true'] .missionCopy {
+    padding-left: clamp(1.5rem, 3vw, 3.5rem);
+    padding-right: 1rem;
+    padding-bottom: 1.25rem;
+  }
+
+  /* The photo keeps its width, so the headline gives way a little. */
+  .missionPanel[data-route='true'] .missionCopy h2 {
+    font-size: clamp(2.8rem, min(4.8vw, 11svh), 5.6rem);
+  }
+
+  .missionPanel[data-route='true'] .route {
+    grid-column: auto;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    align-self: center;
+    padding: 4.5rem clamp(1.5rem, 3vw, 3rem) 2rem 0;
+  }
+
+  .missionPanel[data-route='true'] .routeMap { --map-h: min(30rem, 50svh); }
+  .missionPanel[data-route='true'] .routeStats { grid-template-columns: auto 1fr; align-items: end; column-gap: 1rem; }
+  .missionPanel[data-route='true'] .routeLabel { grid-column: 1 / -1; }
+  .missionPanel[data-route='true'] .routeKm { grid-row: 2 / span 2; }
+}
+
+@media (min-width: 1100px) {
+  .missionPanel[data-wide='true'] .routeNote { font-size: 42px; }
+}
+
+@media (max-width: 740px) {
+  .missionPanel[data-wide='true'] .routeNote { font-size: 40px; }
+  .route { gap: 1.1rem 1.25rem; padding: 0 var(--gutter) 3rem; }
+  .routeMap { --map-h: min(16rem, 44svh); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .missionBack, .missionBackIcon { transition: none; }
+  .missionBack:hover .missionBackIcon { transform: none; }
+  .routeRover .routePulse, .routeEndMark .routePulse { animation: none; }
+  .routeEndMark { transition: none; }
+  .routeNote { transition: none; }
+}
+
+/* Links to outside sources. Solid, quiet surfaces, tinted by the world of the story. */
+.missionPanel { --accent: #f0925b; }
+.missionPanel[data-world='moon'] { --accent: #d6d9e0; }
+.missionPanel[data-world='space'] { --accent: #cfd2da; }
+
+/* Hover: the same glass, lit from the story's own colour. */
+.missionPanel, .route {
+  --glass-accent: color-mix(in srgb, var(--accent) 26%, rgb(18 18 20 / .5));
+}
+
+.sourceChip,
+.sourceQuiet {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  color: #eceef5;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+.sourceChip {
+  padding: .75rem 1.15rem .75rem 1.25rem;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  font-size: 1rem;
+  transition: background .4s ease, color .4s ease;
+}
+
+.sourceChip:hover {
+  background: var(--glass-accent);
+  color: white;
+}
+
+.sourceQuiet {
+  display: inline;
+  color: #b0b5c4;
+  font-size: .9375rem;
+  transition: color .3s ease;
+}
+
+/* In running text the arrow follows the last word instead of the column edge. */
+.sourceQuiet .sourceIcon {
+  display: inline-block;
+  margin-left: .4em;
+  vertical-align: -.12em;
+}
+
+.sourceQuiet:hover { color: white; }
+
+.sourceIcon {
+  flex: none;
+  width: .95em;
+  height: .95em;
+  opacity: .7;
+  transition: transform .45s cubic-bezier(.2, .7, .2, 1), opacity .3s ease;
+}
+
+.sourceChip:hover .sourceIcon,
+.sourceQuiet:hover .sourceIcon,
+.sourceChip:focus-visible .sourceIcon,
+.sourceQuiet:focus-visible .sourceIcon {
+  opacity: 1;
+  transform: translate(2px, -2px);
+}
+
+.sourceChip:focus-visible,
+.sourceQuiet:focus-visible { outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sourceChip, .sourceQuiet, .sourceIcon, .routeControls button { transition: none; }
+  .sourceChip:hover .sourceIcon, .sourceQuiet:hover .sourceIcon { transform: none; }
 }
 
 .heroNav {
@@ -538,13 +1105,14 @@
   place-items: center;
   min-height: 2.75rem;
   padding-inline: .85rem;
-  border: 1px solid #ffffff30;
   border-radius: 999px;
-  background: #101218a8;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
   text-decoration: none;
+  transition: background .3s ease;
 }
 
-.heroNav a:hover { background: #202735; }
+.heroNav a:hover { background: var(--glass-hover); }
 .heroNav .languageSettings { position: relative; inset: auto; }
 
 .mobileNav { display: none; }
@@ -559,9 +1127,10 @@
     width: 2.75rem;
     height: 2.75rem;
     padding: 0;
-    border: 1px solid #ffffff30;
+    border: 0;
     border-radius: 50%;
-    background: #101218;
+    background: var(--glass);
+    backdrop-filter: var(--glass-blur);
     color: white;
     font-size: 1.5rem;
   }
@@ -585,8 +1154,9 @@
   margin: 0;
   padding: 0;
   border: 0;
-  border-right: 1px solid #ffffff25;
-  background: #101218;
+  border-right: 0;
+  background: var(--glass-menu);
+  backdrop-filter: var(--glass-blur);
   color: white;
 }
 

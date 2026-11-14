@@ -1,0 +1,56 @@
+.hub {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.sky, .sky canvas { position: absolute; inset: 0; display: block; }
+
+/* A round, invisible hit area over each planet. The planet itself is drawn by the scene. */
+.slot {
+  position: absolute;
+  translate: -50% -50%;
+}
+
+.planet {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.planet:focus-visible { outline: 2px solid rgb(255 255 255 / .6); outline-offset: 6px; }
+
+.name {
+  position: absolute;
+  left: 50%;
+  display: inline-flex;
+  align-items: baseline;
+  gap: .8rem;
+  padding: .6rem 1.3rem;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  white-space: nowrap;
+  translate: -50% 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .8s ease .2s, background .4s ease;
+}
+
+.slot[data-ready='true'] .name { opacity: 1; }
+.name strong { font-size: 1.15rem; font-weight: 600; }
+.name small { color: #bcbcc2; font-size: .9rem; }
+.slot:has(.planet:hover) .name, .slot:has(.planet:focus-visible) .name { background: var(--glass-hover); }
+
+/* Once a world is chosen the labels go quietly, so only the planet remains. */
+.hub[data-busy='true'] .name { opacity: 0; transition-delay: 0s; transition-duration: .35s; }
+.hub[data-busy='true'] .planet { pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .name { transition: none; }
+}

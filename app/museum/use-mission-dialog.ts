@@ -9,6 +9,8 @@ export function useMissionDialog(input: RefObject<SceneInput>, rotation: RefObje
   const [photoFailed, setPhotoFailed] = useState(false);
   const photoRequest = useRef<AbortController | null>(null);
   const [closing, setClosing] = useState(false);
+  // Counts story openings so a rover route replays each time one opens.
+  const [routeRun, setRouteRun] = useState(0);
 
   useEffect(() => () => photoRequest.current?.abort(), []);
 
@@ -17,6 +19,7 @@ export function useMissionDialog(input: RefObject<SceneInput>, rotation: RefObje
     const request = new AbortController();
     photoRequest.current = request;
     setSelectedMission(id);
+    setRouteRun((count) => count + 1);
     setPhotoReady(false);
     setPhotoFailed(false);
     const photo = new window.Image();
@@ -35,6 +38,8 @@ export function useMissionDialog(input: RefObject<SceneInput>, rotation: RefObje
     void photo.decode().then(() => reveal(true), () => reveal(false));
     input.current.mission = id;
     dialog.current.showModal();
+    // showModal focuses the first button, which would show a focus ring after a click.
+    dialog.current.focus({ preventScroll: true });
   }
 
   function finishMission() {
@@ -60,9 +65,10 @@ export function useMissionDialog(input: RefObject<SceneInput>, rotation: RefObje
   }
 
   return {
+    selectedMission,
     openMission,
     dialogProps: {
-      dialog, photoReady, photoFailed, mission: missions[selectedMission], closing,
+      dialog, photoReady, photoFailed, mission: missions[selectedMission], closing, routeRun,
       onClose: closeMission, onExit: finishMission,
       onReveal: () => { input.current.missionCovered = true; },
     },
