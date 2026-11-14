@@ -187,23 +187,30 @@ export function mountScene(
   const handoff = { moon: 0, mars: 0, space: 0 };
   let zoom = 0;
   let zoomedMission: MissionId = 'lunokhod';
-  const sites = globeMissionIds.map((id) => {
+  // Separate nearby hit areas without moving their camera targets.
+  const markerOffsets: Partial<Record<MissionId, number>> = {
+    apollo: 26, surveyor5: -26,
+    opportunity: -28, schiaparelli: 28,
+    ingenuity: -27, 'perseverance-backshell': 27,
+  };
+  const sites = globeMissionIds.flatMap<{ id: MissionId; world: Destination; point: THREE.Vector3 }>((id) => {
     const mission = missions[id];
     if (mission.world === 'space') {
       const exhibit = orbitExhibits.find((entry) => entry.id === id)!;
-      return { id, world: mission.world, point: new THREE.Vector3().fromArray(exhibit.position) };
+      return [{ id, world: mission.world, point: new THREE.Vector3().fromArray(exhibit.position) }];
     }
+    if (!('latitude' in mission)) return [];
     const latitude = THREE.MathUtils.degToRad(mission.latitude);
     // The Mars GLB puts the centre of its map 72° west of the model's +Z axis.
     const longitude = THREE.MathUtils.degToRad(mission.longitude - (mission.world === 'mars' ? 72 : 0));
-    return {
+    return [{
       id, world: mission.world,
       point: new THREE.Vector3(
         Math.cos(latitude) * Math.sin(longitude),
         Math.sin(latitude),
         Math.cos(latitude) * Math.cos(longitude),
       ),
-    };
+    }];
   });
   const site = new THREE.Vector3();
   const globeCenter = new THREE.Vector3();
@@ -280,13 +287,9 @@ export function mountScene(
       marker.hidden = !(models[world] && group.visible && arrival > 0.95 && departure < 0.06
         && (world === 'space' ? site.z > globeCenter.z || Math.hypot(site.x - globeCenter.x, site.y - globeCenter.y) > group.scale.x * 0.69 : site.z - globeCenter.z > group.scale.x * 0.2));
       if (!marker.hidden) {
-        // Apollo 11 and Surveyor 5 landed close together. Separate their hit areas
-        // on the globe while keeping both surface points for the camera zoom.
-        const nearbyMarkerOffset = markers.surveyor5
-          ? id === 'apollo' ? 26 : id === 'surveyor5' ? -26 : 0
-          : 0;
+        const offset = standalone ? markerOffsets[id] ?? 0 : 0;
         marker.style.left = `${width / 2 + site.x}px`;
-        marker.style.top = `${height / 2 - site.y + nearbyMarkerOffset}px`;
+        marker.style.top = `${height / 2 - site.y + offset}px`;
       }
     }
 
