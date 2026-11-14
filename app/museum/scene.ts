@@ -1,4 +1,4 @@
-import { missionIds, missions, type MissionId } from './missions';
+import { globeMissionIds, missions, orbitExhibits, type MissionId } from './missions';
 import * as THREE from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -96,7 +96,7 @@ export function mountScene(
   const loading = new Set<World>();
   const loader = new GLTFLoader();
   const draco = new DRACOLoader().setDecoderPath('/draco/').setWorkerLimit(1);
-  const orbitAnchor = new THREE.Vector3(0.78, 0.18, 0.68);
+
   const requests = new AbortController();
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let disposed = false;
@@ -131,12 +131,15 @@ export function mountScene(
 
     const normalized = normalizeModel(asset);
     if (world === 'space') {
-      const telescope = new THREE.Group();
-      telescope.position.copy(orbitAnchor);
-      telescope.scale.setScalar(0.26);
-      telescope.rotation.set(0.32, -0.4, -0.28);
-      telescope.add(normalized);
-      groups.space.add(telescope);
+      for (const [index, exhibit] of orbitExhibits.entries()) {
+        const telescope = new THREE.Group();
+        telescope.position.fromArray(exhibit.position);
+        telescope.scale.setScalar(0.11);
+        telescope.rotation.set(0.32, -0.4, index % 2 === 0 ? -0.28 : 0.36);
+        // Clones share geometry and materials. The original owns their disposal.
+        telescope.add(normalized.clone());
+        groups.space.add(telescope);
+      }
     } else {
       groups[world].add(normalized);
     }
@@ -184,9 +187,12 @@ export function mountScene(
   const handoff = { moon: 0, mars: 0, space: 0 };
   let zoom = 0;
   let zoomedMission: MissionId = 'lunokhod';
-  const sites = missionIds.map((id) => {
+  const sites = globeMissionIds.map((id) => {
     const mission = missions[id];
-    if (mission.world === 'space') return { id, world: mission.world, point: orbitAnchor };
+    if (mission.world === 'space') {
+      const exhibit = orbitExhibits.find((entry) => entry.id === id)!;
+      return { id, world: mission.world, point: new THREE.Vector3().fromArray(exhibit.position) };
+    }
     const latitude = THREE.MathUtils.degToRad(mission.latitude);
     // The Mars GLB puts the centre of its map 72° west of the model's +Z axis.
     const longitude = THREE.MathUtils.degToRad(mission.longitude - (mission.world === 'mars' ? 72 : 0));
@@ -260,16 +266,19 @@ export function mountScene(
     const zoomTarget = Number(Boolean(input.mission));
     zoom = still ? 0 : damp(zoom, zoomTarget, 3, dt);
     if (Math.abs(zoomTarget - zoom) < 0.0001) zoom = zoomTarget;
+    groups[displayed].updateMatrixWorld(true);
     for (const { id, world, point } of sites) {
       const group = groups[world];
-      group.updateMatrixWorld(true);
-      site.copy(point).applyMatrix4(group.matrixWorld);
-      globeCenter.setFromMatrixPosition(group.matrixWorld);
       const marker = markers[id];
       if (!marker) continue;
-      marker.hidden = !(models[world] && group.visible && displayed === world
-        && input.destination === world && arrival > 0.95 && departure < 0.06
-        && (world === 'space' ? site.z > globeCenter.z || Math.hypot(site.x - globeCenter.x, site.y - globeCenter.y) > group.scale.x * 0.69 : site.z - globeCenter.z > group.scale.x * 0.2) && !input.mission && zoom < 0.03);
+      if (displayed !== world || input.destination !== world || input.mission || zoom >= 0.03) {
+        marker.hidden = true;
+        continue;
+      }
+      site.copy(point).applyMatrix4(group.matrixWorld);
+      globeCenter.setFromMatrixPosition(group.matrixWorld);
+      marker.hidden = !(models[world] && group.visible && arrival > 0.95 && departure < 0.06
+        && (world === 'space' ? site.z > globeCenter.z || Math.hypot(site.x - globeCenter.x, site.y - globeCenter.y) > group.scale.x * 0.69 : site.z - globeCenter.z > group.scale.x * 0.2));
       if (!marker.hidden) {
         marker.style.left = `${width / 2 + site.x}px`;
         marker.style.top = `${height / 2 - site.y}px`;

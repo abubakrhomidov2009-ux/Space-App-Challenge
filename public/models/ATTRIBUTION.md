@@ -7,3 +7,5 @@
 - [Earth](https://sketchfab.com/3d-models/earth-c2e4294c32ea4d8b850e152fc26aeeb4) — ABOD.ANIMATION. Освещение и параметры материала адаптированы при отрисовке.
 
 - [Hubble Space Telescope (A)](https://science.nasa.gov/3d-resources/hubble-space-telescope-a/) — DigitalSpace Corporation, опубликовано NASA. Размер в сцене условный.
+
+В сцене «Космос» модель «Хаббла» также используется как условное изображение «Спитцера».

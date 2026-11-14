@@ -2,7 +2,7 @@ export const languages = { ru: 'Русский', en: 'English', tg: 'Тоҷик�
 export type Language = keyof typeof languages;
 
 export const museumCopy = {
-  ru: { orbit: 'Орбита телескопа',
+  ru: { landingRegion: 'Район посадки', orbit: 'Орбита телескопа',
     language: 'Язык', moon: 'Луна', mars: 'Марс', earth: 'Земля',
     title: 'Что мы оставили в космосе?',
     intro: 'Истории аппаратов, которые остались на Луне и Марсе.',
@@ -19,7 +19,7 @@ export const museumCopy = {
     photo: 'Музейная модель · фото В. П. Галина',
     photoAlt: 'Восьмиколёсная музейная модель «Лунохода‑1» с открытой крышкой',
   },
-  en: { orbit: 'Telescope orbit',
+  en: { landingRegion: 'Landing region', orbit: 'Telescope orbit',
     language: 'Language', moon: 'Moon', mars: 'Mars', earth: 'Earth',
     title: 'What did we leave in space?',
     intro: 'Stories of spacecraft that remain on the Moon and Mars.',
@@ -36,7 +36,7 @@ export const museumCopy = {
     photo: 'Museum model · photo by V. P. Galin',
     photoAlt: 'Eight-wheeled museum model of Lunokhod 1 with its lid open',
   },
-  tg: { orbit: 'Мадори телескоп',
+  tg: { landingRegion: 'Минтақаи фуруд', orbit: 'Мадори телескоп',
     language: 'Забон', moon: 'Моҳ', mars: 'Миррих', earth: 'Замин',
     title: 'Мо дар кайҳон чӣ гузоштем?',
     intro: 'Қиссаи дастгоҳҳое, ки дар Моҳ ва Миррих боқӣ мондаанд.',

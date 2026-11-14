@@ -1,3 +1,4 @@
+import { catalogExpansion } from './catalog-expansion';
 import { hubble } from './hubble';
 import { additionalMissions } from './additional-missions';
 import { lunokhod } from './lunokhod';
@@ -6,6 +7,7 @@ const marsCoordinates = 'https://www-robotics.jpl.nasa.gov/media/documents/05per
 
 export const missions = {
   ...additionalMissions,
+  ...catalogExpansion,
   hubble,
   lunokhod: { kind: 'rover', ...lunokhod, world: 'moon', image: '/lunokhod-1.webp', imageKind: 'model', siteKind: 'position' },
   apollo: { kind: 'lander',
@@ -79,3 +81,13 @@ export const missions = {
 
 export type MissionId = keyof typeof missions;
 export const missionIds = Object.keys(missions) as MissionId[];
+
+// Each entry uses the shared telescope mesh. Positions are illustrative.
+export const orbitExhibits = ([
+  { id: 'hubble', position: [0.78, 0.18, 0.68] },
+  { id: 'spitzer', position: [-0.94, -0.28, 0.54] },
+] as const).slice(0, 6);
+
+export const globeMissionIds = missionIds.filter((id) =>
+  missions[id].world !== 'space' || orbitExhibits.some((exhibit) => exhibit.id === id),
+);

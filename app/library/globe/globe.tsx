@@ -6,7 +6,7 @@ import { useMissionDialog } from '../../museum/use-mission-dialog';
 import { useEffect, useRef, useState } from 'react';
 import LanguageSettings from '../../museum/language-settings';
 import { museumCopy } from '../../museum/languages';
-import { missionIds, missions, type MissionId } from '../../museum/missions';
+import { globeMissionIds, missions, type MissionId } from '../../museum/missions';
 import type { Destination, SceneInput, SceneStatus } from '../../museum/scene';
 import { useLanguage } from '../../museum/use-language';
 import museumStyles from '../../museum/museum.module.css';
@@ -103,7 +103,7 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
             input.current.dragging = false;
             input.current.resumeAt = performance.now() + 3000;
           }} />
-        {missionIds.map((id) => (
+        {globeMissionIds.map((id) => (
           <button key={id} ref={(element) => {
             if (element) markers.current[id] = element;
             else delete markers.current[id];

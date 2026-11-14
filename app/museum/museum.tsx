@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useLanguage } from './use-language';
 import { libraryCopy } from '../library/labels';
 import Image from 'next/image';
-import { preload } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
 import type { Destination, SceneInput, SceneStatus } from './scene';
 import MobileMenu from './mobile-menu';
@@ -59,12 +58,6 @@ export default function Museum() {
     input.current.resumeAt = performance.now() + 3000;
   }
 
-  useEffect(() => {
-    if (status[destination] === 'loading') return;
-    for (const mission of Object.values(missions)) {
-      if (mission.world === destination) preload(mission.image, { as: 'image', fetchPriority: 'low' });
-    }
-  }, [destination, status]);
 
   const message = unavailable
     ? copy.unavailable
