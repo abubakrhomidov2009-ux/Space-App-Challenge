@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { museumCopy, type Language } from './languages';
 import type { Route } from './routes';
+import SourceLink from './source-link';
 import styles from './museum.module.css';
 
 const MARGIN_M = 900;
@@ -164,7 +165,7 @@ export default function RouteMap({ route, language, playKey, world, sourceUrl }:
           onChange={(event) => { stop(); show(Number(event.target.value) / 1000); }} />
         <button type="button" onClick={play}>{labels.replay}</button>
       </div>
-      {sourceUrl && <p className={styles.routeCredit}><a href={sourceUrl}>{labels.routeSource}</a></p>}
+      {sourceUrl && <p className={styles.routeCredit}><SourceLink href={sourceUrl} variant="quiet">{labels.routeSource}</SourceLink></p>}
     </div>
   );
 }

@@ -380,32 +380,34 @@
   position: absolute;
   inset: auto auto 1.5rem var(--gutter);
   max-width: 82%;
-  padding: .4rem .65rem;
-  background: radial-gradient(ellipse at center, #0b0c108c, transparent 76%);
-  text-shadow: 0 1px 5px #000, 0 1px 12px #000;
-  color: #e2e2e8;
-  font-size: .8rem;
+}
+
+.missionPhoto .sourceChip {
+  padding: .6rem 1rem .6rem 1.1rem;
+  background: #0b0c10e0;
+  font-size: .9375rem;
 }
 
 .missionCopy {
   max-width: 39rem;
-  padding: 5rem var(--gutter) 3rem clamp(1.5rem, 4vw, 5rem);
+  padding: clamp(3.75rem, 9svh, 5rem) var(--gutter) 3rem clamp(1.5rem, 4vw, 5rem);
+  font-size: clamp(.98rem, min(.94rem + .3vw, 2.4svh), 1.15rem);
   line-height: 1.6;
   color: #d2d4de;
 }
 
-.missionLocation { font-size: .875rem; }
+.missionLocation { color: #b6bbc9; font-size: 1.0625rem; }
 
 .missionCopy h2 {
   margin: 0;
   color: white;
-  font-size: clamp(3rem, 7vw, 7rem);
+  font-size: clamp(3rem, min(7vw, 13svh), 7rem);
   line-height: .95;
   letter-spacing: -.05em;
 }
 
-.missionIntro { color: white; font-size: clamp(1.1rem, 2.2vw, 1.45rem); }
-.missionSources { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; font-size: .875rem; }
+.missionIntro { color: white; font-size: clamp(1.1rem, min(2.2vw, 3svh), 1.45rem); }
+.missionSources { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.9rem 0 0; }
 
 .missionFog {
   --fog-highlight: #53678280;
@@ -660,8 +662,8 @@
 }
 
 .routeNote {
-  fill: #9ea3b3;
-  font: 400 26px 'IBM Plex Sans', sans-serif;
+  fill: #aeb3c2;
+  font: 400 31px 'IBM Plex Sans', sans-serif;
   transition: opacity .8s ease;
 }
 
@@ -682,7 +684,7 @@
 
 .routeStats p { margin: 0; }
 
-.routeLabel { color: #9ea3b3; font-size: .875rem; }
+.routeLabel { color: #b0b5c4; font-size: 1.0625rem; }
 
 .routeKm {
   white-space: nowrap;
@@ -704,8 +706,8 @@
 
 .routeSub,
 .routeSol {
-  color: #c3c6d2;
-  font-size: .95rem;
+  color: #d0d3de;
+  font-size: 1.0625rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -748,22 +750,20 @@
 }
 
 .routeControls button {
-  padding: .4rem .2rem;
+  padding: .55rem 1.1rem;
   border: 0;
-  background: none;
-  color: #c3c6d2;
-  text-decoration: underline;
-  text-underline-offset: .25em;
-  transition: color .2s ease;
+  border-radius: 999px;
+  background: #171a23;
+  color: #eceef5;
+  font-size: 1rem;
+  transition: background .35s ease, color .35s ease;
 }
 
-.routeControls button:hover { color: white; }
+.routeControls button:hover { background: color-mix(in srgb, var(--accent) 24%, #171a23); color: white; }
 
 .routeCredit {
   grid-column: 1 / -1;
   margin: 0;
-  color: #8a8fa0;
-  font-size: .8rem;
 }
 
 /* Tablet: the route sits under the text, in the text column. */
@@ -804,4 +804,71 @@
 @media (prefers-reduced-motion: reduce) {
   .routeRover .routePulse { animation: none; }
   .routeNote { transition: none; }
+}
+
+/* Links to outside sources. Solid, quiet surfaces, tinted by the world of the story. */
+.missionPanel { --accent: #f0925b; }
+.missionPanel[data-world='moon'] { --accent: #cfd9ee; }
+
+.sourceChip,
+.sourceQuiet {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  color: #eceef5;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+.sourceChip {
+  padding: .75rem 1.15rem .75rem 1.25rem;
+  border-radius: 999px;
+  background: #171a23;
+  font-size: 1rem;
+  transition: background .4s ease, color .4s ease;
+}
+
+.sourceChip:hover {
+  background: color-mix(in srgb, var(--accent) 24%, #171a23);
+  color: white;
+}
+
+.sourceQuiet {
+  display: inline;
+  color: #b0b5c4;
+  font-size: .9375rem;
+  transition: color .3s ease;
+}
+
+/* In running text the arrow follows the last word instead of the column edge. */
+.sourceQuiet .sourceIcon {
+  display: inline-block;
+  margin-left: .4em;
+  vertical-align: -.12em;
+}
+
+.sourceQuiet:hover { color: white; }
+
+.sourceIcon {
+  flex: none;
+  width: .95em;
+  height: .95em;
+  opacity: .7;
+  transition: transform .45s cubic-bezier(.2, .7, .2, 1), opacity .3s ease;
+}
+
+.sourceChip:hover .sourceIcon,
+.sourceQuiet:hover .sourceIcon,
+.sourceChip:focus-visible .sourceIcon,
+.sourceQuiet:focus-visible .sourceIcon {
+  opacity: 1;
+  transform: translate(2px, -2px);
+}
+
+.sourceChip:focus-visible,
+.sourceQuiet:focus-visible { outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sourceChip, .sourceQuiet, .sourceIcon, .routeControls button { transition: none; }
+  .sourceChip:hover .sourceIcon, .sourceQuiet:hover .sourceIcon { transform: none; }
 }
