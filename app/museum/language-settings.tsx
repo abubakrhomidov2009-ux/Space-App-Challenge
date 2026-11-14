@@ -42,7 +42,14 @@ export default function LanguageSettings({ language, onChange }: {
         event.preventDefault();
         close(true);
       }}>
-      <summary aria-label={label}><span aria-hidden="true">⚙︎</span></summary>
+      <summary aria-label={label}>
+        <svg className={styles.languageIcon} viewBox="0 0 20 20" fill="none" stroke="currentColor"
+          strokeWidth="1.3" strokeLinecap="round" aria-hidden="true">
+          <circle cx="10" cy="10" r="7.5" />
+          <path d="M2.5 10h15M10 2.5c-2.4 2.2-3.6 4.7-3.6 7.5s1.2 5.3 3.6 7.5c2.4-2.2 3.6-4.7 3.6-7.5S12.4 4.7 10 2.5Z" />
+        </svg>
+        <span className={styles.languageCode} aria-hidden="true">{language}</span>
+      </summary>
       <div className={styles.languageMenu} role="group" aria-label={label}>
         <p>{label}</p>
         {(Object.keys(languages) as Language[]).map((option) => (

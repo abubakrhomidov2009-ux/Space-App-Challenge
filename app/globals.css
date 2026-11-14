@@ -4,6 +4,34 @@
   --foreground: #f5f5f5;
   --muted: #b5b5b5;
   --line: #444;
+
+  /* Surfaces. All neutral: no blue in the blacks. */
+  --surface: #0a0a0b;
+
+  /* Acrylic: a flat translucent tint and a blur. No outline, no highlight, no shadow. */
+  --glass: rgb(18 18 20 / .5);
+  --glass-hover: rgb(70 70 76 / .5);
+  --glass-menu: rgb(18 18 20 / .8);
+  --glass-blur: blur(24px) saturate(1.5);
+}
+
+/* Without blur support, or when the system asks for less transparency, the glass becomes solid. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass: #262628;
+    --glass-hover: #38383c;
+    --glass-menu: #1a1a1c;
+    --glass-blur: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass: #262628;
+    --glass-hover: #38383c;
+    --glass-menu: #1a1a1c;
+    --glass-blur: none;
+  }
 }
 
 body {

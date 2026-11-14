@@ -53,6 +53,30 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
     };
   }, []);
 
+  // Hold the idle spin while a point is under the pointer or focused, so it can be clicked.
+  // The release is delayed: a coasting globe can slide the point out and back under the cursor.
+  const releaseTimer = useRef<number>(0);
+
+  function holdRotation() {
+    window.clearTimeout(releaseTimer.current);
+    input.current.hovering = true;
+  }
+
+  function releaseRotation() {
+    window.clearTimeout(releaseTimer.current);
+    releaseTimer.current = window.setTimeout(() => {
+      input.current.hovering = false;
+      input.current.resumeAt = performance.now() + 400;
+    }, 350);
+  }
+
+  function open(id: MissionId) {
+    // The point hides on open, so its pointerleave may never fire.
+    window.clearTimeout(releaseTimer.current);
+    input.current.hovering = false;
+    openMission(id);
+  }
+
   function rotate(delta: number) {
     input.current[input.current.destination] += delta;
     input.current.resumeAt = performance.now() + 3000;
@@ -110,18 +134,32 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
           }} hidden
             className={`${museumStyles.marker} ${styles.globeMarker}`}
             aria-label={missions[id].copy[language].name}
-            onClick={() => openMission(id)}>
+            onClick={() => open(id)}
+            onPointerEnter={holdRotation} onPointerLeave={releaseRotation}
+            onFocus={holdRotation} onBlur={releaseRotation}>
             <span className={museumStyles.markerCore} aria-hidden="true" />
             <span className={museumStyles.markerName} aria-hidden="true">{missions[id].copy[language].name}</span>
           </button>
         ))}
-        <button className={`${museumStyles.next} ${styles.previousWorld}`}
+        <button className={`${museumStyles.next} ${styles.previousWorld}`} data-next={previous} data-side="previous"
           aria-label={`← ${copy.show} · ${names[previous]}`} onClick={() => switchWorld(-1)}>
-          <span><i className="nav-arrow nav-arrow-left" aria-hidden="true" /></span>
+          <span key={previous} className={museumStyles.nextDisc} aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25"
+              strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12h15M13.5 6.5 19 12l-5.5 5.5" />
+            </svg>
+          </span>
+          <span className={museumStyles.nextName} aria-hidden="true">{names[previous]}</span>
         </button>
-        <button className={`${museumStyles.next} ${styles.nextWorld}`}
+        <button className={`${museumStyles.next} ${styles.nextWorld}`} data-next={next} data-side="next"
           aria-label={`→ ${copy.show} · ${names[next]}`} onClick={() => switchWorld(1)}>
-          <span><i className="nav-arrow" aria-hidden="true" /></span>
+          <span key={next} className={museumStyles.nextDisc} aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25"
+              strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12h15M13.5 6.5 19 12l-5.5 5.5" />
+            </svg>
+          </span>
+          <span className={museumStyles.nextName} aria-hidden="true">{names[next]}</span>
         </button>
         <p className={styles.globeStatus} role="status">
           {unavailable ? copy.unavailable : status[world] === 'error' ? copy.error : status[world] === 'loading' ? copy.loading : names[world]}

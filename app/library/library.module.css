@@ -6,7 +6,20 @@
 }
 
 .header { min-height: 3rem; display: flex; align-items: center; padding-right: 3.5rem; }
-.header a { text-underline-offset: .25em; }
+.header a {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 2.75rem;
+  padding-inline: 1.05rem 1.2rem;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  text-decoration: none;
+  transition: background .3s ease;
+}
+
+.header a:hover { background: var(--glass-hover); }
 .library h1 { font-size: clamp(2.65rem, 8vw, 5.5rem); line-height: 1; margin: 2rem 0 .6rem; }
 .description { color: #c2c5ce; }
 .filters { display: grid; grid-template-columns: 2fr 1fr; gap: .75rem; margin-top: 2rem; }
@@ -18,7 +31,7 @@
   padding: .55rem .7rem;
   border: 1px solid #434650;
   border-radius: .45rem;
-  background: #14161d;
+  background: #151516;
   color: inherit;
   font: inherit;
 }
@@ -30,7 +43,7 @@
   box-sizing: border-box;
   border: 1px solid #30333c;
   border-radius: .65rem;
-  background: #101116;
+  background: #101011;
   text-decoration: none;
 }
 .cards a:hover { border-color: #a6b5cf; }
@@ -40,7 +53,7 @@
 .cardCopy h2 { margin: .35rem 0; font-size: 1.5rem; line-height: 1.13; }
 .cardCopy p { margin: 0; color: #c2c5ce; }
 .cardCopy p:first-child { font-size: .82rem; }
-.detail { display: grid; grid-template-columns: 1fr 1fr; margin-top: 1rem; background: #0b0c10; }
+.detail { display: grid; grid-template-columns: 1fr 1fr; margin-top: 1rem; background: var(--surface); }
 
 @media (max-width: 900px) {
   .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -70,7 +83,7 @@
   isolation: isolate;
   border: 1px solid #3c404a;
   border-radius: .7rem;
-  background: #09090c;
+  background: #0a0a0b;
   text-decoration: none;
 }
 
@@ -86,7 +99,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(0deg, #07080c 0%, transparent 68%);
+  background: linear-gradient(0deg, #080809 0%, transparent 68%);
 }
 
 .category > span {
@@ -107,7 +120,7 @@
 
 .globePage {
   min-height: 100svh;
-  background: #060608;
+  background: #060606;
 }
 
 .globeHeader {
@@ -122,10 +135,15 @@
   align-items: center;
   gap: .45rem;
   min-height: 2.75rem;
-  padding-inline: .75rem;
+  padding-inline: 1.05rem 1.2rem;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
   text-decoration: none;
-  text-shadow: 0 1px 7px #000;
+  transition: background .3s ease;
 }
+
+.globeHeader a:hover { background: var(--glass-hover); }
 
 .globe {
   position: relative;
@@ -156,24 +174,6 @@
 
 .globe button.previousWorld { right: auto; left: max(.75rem, env(safe-area-inset-left)); }
 .globe button.nextWorld { right: max(.75rem, env(safe-area-inset-right)); }
-
-/* World-switch buttons here move between three worlds, so they stay plain round arrows. */
-.globe button.previousWorld span,
-.globe button.nextWorld span {
-  display: grid;
-  width: 3.25rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border-radius: 50%;
-  background: #09090dcc;
-  font-size: 1.45rem;
-  transition: background-color .25s ease, color .25s ease;
-}
-
-.globe button.previousWorld:hover span,
-.globe button.nextWorld:hover span,
-.globe button.previousWorld:focus-visible span,
-.globe button.nextWorld:focus-visible span { background: #f4f4f5; color: #070709; }
 
 .globeStatus {
   position: absolute;

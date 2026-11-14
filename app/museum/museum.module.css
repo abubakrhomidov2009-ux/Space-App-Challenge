@@ -118,6 +118,14 @@
   --halo: #e8834e59;
 }
 
+.next[data-next='space'] {
+  --land: #1c3f86;
+  --map: url('/planets/earth.webp');
+  --turn-from: 30%;
+  --turn-to: 68%;
+  --halo: #6fa3ee59;
+}
+
 .nextDisc {
   position: relative;
   isolation: isolate;
@@ -152,8 +160,8 @@
   z-index: -1;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 32% 28%, transparent 0 26%, #05060a4d 54%, #05060a99 76%, #05060af2 100%),
-    #05060a42;
+    radial-gradient(circle at 32% 28%, transparent 0 26%, #0506064d 54%, #05060699 76%, #050606f2 100%),
+    #05060642;
 }
 
 .nextDisc svg {
@@ -190,8 +198,15 @@
 
 .next:active .nextDisc { transform: scale(.96); transition-duration: .2s; }
 
+/* A button that leads back: the arrow points left and the world slides in from the left. */
+.next[data-side='previous'] { --arrive: -18px; }
+.next[data-side='previous'] .nextDisc svg { transform: scaleX(-1); }
+
+.next[data-side='previous']:hover .nextDisc svg,
+.next[data-side='previous']:focus-visible .nextDisc svg { transform: scaleX(-1) translateX(4px); }
+
 @keyframes worldArrive {
-  from { opacity: 0; transform: translateX(18px) scale(.7); }
+  from { opacity: 0; transform: translateX(var(--arrive, 18px)) scale(.7); }
   to { opacity: 1; transform: none; }
 }
 
@@ -293,9 +308,8 @@
   left: calc(100% + .25rem);
   padding: .4rem .75rem;
   color: white;
-  background: #0d0f15;
+  background: rgb(18 18 20 / .78);
   border-radius: .55rem;
-  box-shadow: 0 10px 28px #0009;
   font-size: .875rem;
   white-space: nowrap;
   opacity: 0;
@@ -339,7 +353,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, .92fr);
   align-items: center;
-  background: #0b0c10;
+  background: var(--surface);
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -359,15 +373,15 @@
   padding: .72rem 1.25rem .72rem 1.05rem;
   border: 0;
   border-radius: 999px;
-  background: #13161e;
-  box-shadow: 0 10px 30px #0008;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
   color: white;
   font-size: 1rem;
   line-height: 1.25;
   transition: background .3s ease;
 }
 
-.missionBack:hover { background: #1d212c; }
+.missionBack:hover { background: var(--glass-hover); }
 
 /* Drawn arrow, centred on the text; it steps back a little on hover. */
 .missionBackIcon {
@@ -402,7 +416,6 @@
 
 .missionPhoto .sourceChip {
   padding: .6rem 1rem .6rem 1.1rem;
-  background: #0b0c10e0;
   font-size: .9375rem;
 }
 
@@ -428,10 +441,10 @@
 .missionSources { display: flex; flex-wrap: wrap; gap: .7rem; margin: 1.5rem 0 0; }
 
 .missionFog {
-  --fog-highlight: #53678280;
-  --fog-shadow: #27374eac;
-  --fog-core: #141b27;
-  --fog-edge: #07090e;
+  --fog-highlight: #7b7e8780;
+  --fog-shadow: #3c3e44ac;
+  --fog-core: #1c1d20;
+  --fog-edge: #08080a;
   position: absolute;
   inset: 0;
   z-index: 3;
@@ -545,6 +558,7 @@
   .nextDisc, .languageSettings[open] .languageMenu { animation: none; }
   .next:hover .nextDisc, .next:focus-visible .nextDisc { transform: none; }
   .next:hover .nextDisc svg, .next:focus-visible .nextDisc svg { transform: none; }
+  .next[data-side='previous']:hover .nextDisc svg, .next[data-side='previous']:focus-visible .nextDisc svg { transform: scaleX(-1); }
   .mission[open] .missionPanel { opacity: 1; }
   .missionFog { display: none; }
   .marker::before, .mission[open] .missionPanel, .mission[open] .missionFog,
@@ -559,19 +573,39 @@
 }
 
 .languageSettings summary {
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
   height: 2.75rem;
   margin-left: auto;
+  padding: 0 1.05rem 0 .95rem;
   border: 0;
-  border-radius: 50%;
-  background: #13161e;
-  box-shadow: 0 10px 30px #0008;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
   transition: background .3s ease;
   color: white;
-  font: 1.45rem/1 system-ui, sans-serif;
   cursor: pointer;
+  list-style: none;
+  width: max-content;
+}
+
+.languageIcon {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform .6s cubic-bezier(.2, .7, .2, 1);
+}
+
+.languageSettings summary:hover .languageIcon,
+.languageSettings[open] .languageIcon { transform: rotate(60deg); }
+
+.languageCode {
+  font-size: .9rem;
+  font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
 .languageSettings summary::-webkit-details-marker { display: none; }
@@ -585,8 +619,8 @@
   min-width: 11rem;
   padding: .6rem;
   border-radius: .9rem;
-  background: #12141b;
-  box-shadow: 0 24px 60px #000a;
+  background: var(--glass-menu);
+  backdrop-filter: var(--glass-blur);
   color: white;
 }
 
@@ -602,7 +636,7 @@
 
 .languageMenu p {
   margin: .15rem .6rem .3rem;
-  color: #b5c0d3;
+  color: #b6b6bd;
   font-size: .78rem;
 }
 
@@ -614,7 +648,7 @@
   padding: .5rem .65rem;
   align-items: center;
   text-align: left;
-  color: #eef0f6;
+  color: #f0f0f3;
   background: transparent;
   border: 0;
   border-radius: .55rem;
@@ -623,12 +657,14 @@
 
 .languageMenu button:hover { background: #ffffff0f; }
 
-.languageMenu button[aria-pressed='true'] { background: #b8cfef1f; }
+.languageMenu button[aria-pressed='true'] { background: #ffffff1f; }
 
-.languageMenu button span { color: #c4d9fa; }
+.languageMenu button span { color: white; }
 
 .languageSettings summary:hover,
-.languageSettings[open] summary { background: #1d212c; }
+.languageSettings[open] summary { background: var(--glass-hover); }
+
+@media (prefers-reduced-motion: reduce) { .languageIcon { transition: none; } }
 
 .missionPanel .languageSettings { z-index: 2; }
 
@@ -698,7 +734,7 @@
 .routeNote {
   /* A dark halo keeps labels readable where the track passes behind them. */
   paint-order: stroke fill;
-  stroke: #0b0c10;
+  stroke: #0a0a0b;
   stroke-width: 8px;
   stroke-linejoin: round;
   fill: #aeb3c2;
@@ -803,13 +839,14 @@
   padding: .55rem 1.1rem;
   border: 0;
   border-radius: 999px;
-  background: #171a23;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
   color: #eceef5;
   font-size: 1rem;
   transition: background .35s ease, color .35s ease;
 }
 
-.routeControls button:hover { background: color-mix(in srgb, var(--accent) 24%, #171a23); color: white; }
+.routeControls button:hover { background: var(--glass-accent); color: white; }
 
 .routeCredit,
 .routeOdometer {
@@ -891,7 +928,13 @@
 
 /* Links to outside sources. Solid, quiet surfaces, tinted by the world of the story. */
 .missionPanel { --accent: #f0925b; }
-.missionPanel[data-world='moon'] { --accent: #cfd9ee; }
+.missionPanel[data-world='moon'] { --accent: #d6d9e0; }
+.missionPanel[data-world='space'] { --accent: #cfd2da; }
+
+/* Hover: the same glass, lit from the story's own colour. */
+.missionPanel, .route {
+  --glass-accent: color-mix(in srgb, var(--accent) 26%, rgb(18 18 20 / .5));
+}
 
 .sourceChip,
 .sourceQuiet {
@@ -906,13 +949,14 @@
 .sourceChip {
   padding: .75rem 1.15rem .75rem 1.25rem;
   border-radius: 999px;
-  background: #171a23;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
   font-size: 1rem;
   transition: background .4s ease, color .4s ease;
 }
 
 .sourceChip:hover {
-  background: color-mix(in srgb, var(--accent) 24%, #171a23);
+  background: var(--glass-accent);
   color: white;
 }
 
@@ -974,13 +1018,14 @@
   place-items: center;
   min-height: 2.75rem;
   padding-inline: .85rem;
-  border: 1px solid #ffffff30;
   border-radius: 999px;
-  background: #101218a8;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
   text-decoration: none;
+  transition: background .3s ease;
 }
 
-.heroNav a:hover { background: #202735; }
+.heroNav a:hover { background: var(--glass-hover); }
 .heroNav .languageSettings { position: relative; inset: auto; }
 
 .mobileNav { display: none; }
@@ -995,9 +1040,10 @@
     width: 2.75rem;
     height: 2.75rem;
     padding: 0;
-    border: 1px solid #ffffff30;
+    border: 0;
     border-radius: 50%;
-    background: #101218;
+    background: var(--glass);
+    backdrop-filter: var(--glass-blur);
     color: white;
     font-size: 1.5rem;
   }
@@ -1021,8 +1067,9 @@
   margin: 0;
   padding: 0;
   border: 0;
-  border-right: 1px solid #ffffff25;
-  background: #101218;
+  border-right: 0;
+  background: var(--glass-menu);
+  backdrop-filter: var(--glass-blur);
   color: white;
 }
 
