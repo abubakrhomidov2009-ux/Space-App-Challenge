@@ -104,3 +104,73 @@
   .categories { grid-template-columns: 1fr; }
   .category { aspect-ratio: 16 / 9; }
 }
+
+.globePage {
+  min-height: 100svh;
+  background: #060608;
+}
+
+.globeHeader {
+  position: absolute;
+  z-index: 5;
+  top: max(.75rem, env(safe-area-inset-top));
+  left: max(.75rem, env(safe-area-inset-left));
+}
+
+.globeHeader a {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 2.75rem;
+  padding-inline: .75rem;
+  text-decoration: none;
+  text-shadow: 0 1px 7px #000;
+}
+
+.globe {
+  position: relative;
+  isolation: isolate;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.globeCanvas,
+.globeDrag {
+  position: absolute;
+  inset: 0;
+}
+
+.globeCanvas canvas { display: block; }
+.globeDrag { touch-action: pan-y; cursor: grab; }
+.globeDrag:active { cursor: grabbing; }
+.globeDrag:focus-visible { outline-offset: -4px; }
+.globe .globeMarker { position: absolute; }
+
+.globe button.previousWorld,
+.globe button.nextWorld {
+  z-index: 5;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+.globe button.previousWorld { right: auto; left: max(.75rem, env(safe-area-inset-left)); }
+.globe button.nextWorld { right: max(.75rem, env(safe-area-inset-right)); }
+
+.globeStatus {
+  position: absolute;
+  inset: auto 4rem max(1rem, env(safe-area-inset-bottom));
+  margin: 0;
+  text-align: center;
+  text-shadow: 0 1px 7px #000;
+  pointer-events: none;
+}
+
+@media (max-width: 740px) {
+  .globe button.previousWorld,
+  .globe button.nextWorld {
+    top: auto;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    transform: none;
+  }
+}

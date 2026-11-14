@@ -7,7 +7,7 @@ export type Destination = 'moon' | 'mars';
 type World = Destination | 'earth';
 type ModelStatus = 'loading' | 'ready' | 'error';
 export type SceneStatus = Record<World, ModelStatus>;
-export type SceneInput = { destination: Destination; moon: number; mars: number; dragging: boolean; resumeAt: number; mission: MissionId | null; missionCovered: boolean };
+export type SceneInput = { destination: Destination; moon: number; mars: number; dragging: boolean; resumeAt: number; mission: MissionId | null; missionCovered: boolean; switchDirection?: -1 | 1 };
 
 const { lerp, smoothstep, damp } = THREE.MathUtils;
 
@@ -37,12 +37,13 @@ function createStars() {
 
 export function mountScene(
   host: HTMLDivElement,
-  explore: HTMLElement,
-  finale: HTMLElement,
+  explore: HTMLElement | null,
+  finale: HTMLElement | null,
   input: SceneInput,
   markers: Partial<Record<MissionId, HTMLButtonElement>>,
   onStatus: (world: World, status: ModelStatus) => void,
 ) {
+  const standalone = explore === null;
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.matchMedia('(pointer: coarse)').matches ? 1.25 : 1.75));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -155,8 +156,8 @@ export function mountScene(
   let exploreTop = 0;
   let finaleTop = 0;
   function measureScroll() {
-    exploreTop = explore.getBoundingClientRect().top;
-    finaleTop = finale.getBoundingClientRect().top;
+    exploreTop = explore?.getBoundingClientRect().top ?? 0;
+    finaleTop = finale?.getBoundingClientRect().top ?? Infinity;
   }
   measureScroll();
   window.addEventListener('scroll', measureScroll, { passive: true });
@@ -165,7 +166,8 @@ export function mountScene(
   let lastFrame = 0;
   let scroll = 1 - exploreTop / window.innerHeight;
   let ending = finaleTop / window.innerHeight;
-  let displayed: Destination = 'moon';
+  let displayed = input.destination;
+  let slideDirection = 1;
   const handoff = { moon: 0, mars: 0 };
   let zoom = 0;
   let zoomedMission: MissionId = 'lunokhod';
@@ -190,24 +192,28 @@ export function mountScene(
   const viewDirection = new THREE.Vector3(0, 0, 1);
   const turnToFront = new THREE.Quaternion();
   const facingRotation = new THREE.Quaternion();
-  ensure('moon');
+  ensure(input.destination);
 
   renderer.setAnimationLoop((time) => {
     const dt = Math.min(0.05, (time - lastFrame) / 1000);
     lastFrame = time;
     if (input.missionCovered) return;
 
-    if (input.destination === 'mars' || (models.moon && exploreTop < height * 0.6)) ensure('mars');
+    ensure(input.destination);
+    if (!standalone && models.moon && exploreTop < height * 0.6) ensure('mars');
     if (finaleTop < height * 1.1) ensure('earth');
 
     const still = reduced.matches;
     const scrollTarget = 1 - exploreTop / height;
     const endingTarget = finaleTop / height;
     scroll = still ? scrollTarget : damp(scroll, scrollTarget, 11, dt);
-    ending = still ? endingTarget : damp(ending, endingTarget, 11, dt);
-    if (models[input.destination]) displayed = input.destination;
+    ending = standalone ? 2 : still ? endingTarget : damp(ending, endingTarget, 11, dt);
+    if (models[input.destination] && displayed !== input.destination) {
+      slideDirection = input.switchDirection ?? 1;
+      displayed = input.destination;
+    }
 
-    const arrival = still ? Number(scroll >= 0.55) : smoothstep(scroll, 0.04, 1);
+    const arrival = standalone ? 1 : still ? Number(scroll >= 0.55) : smoothstep(scroll, 0.04, 1);
     // Leave room for the outgoing globe to recede before Earth's horizon enters.
     const departure = still ? Number(ending < 0.35) : 1 - smoothstep(ending, 0.33, 0.94);
     const earthArrival = still ? departure : 1 - smoothstep(ending, -0.04, 0.48);
@@ -223,7 +229,7 @@ export function mountScene(
       group.visible = prominence > 0.001 && arrival > 0.001 && departure < 0.999 && (!still || departure === 0);
       group.scale.setScalar(risingRadius * lerp(0.53, 1, prominence) * lerp(1, 0.18, departure));
       group.position.set(
-        width * (1 - prominence) * (active ? 0.75 : -0.29),
+        width * (1 - prominence) * (active ? 0.75 : -0.29) * slideDirection,
         -(risingRadius + height * 0.46) * (1 - arrival) + height * departure * 0.26,
         -850 * (1 - prominence) - 900 * departure,
       );

@@ -40,6 +40,7 @@ export default function MobileMenu({ language }: { language: Language }) {
             aria-label={museumCopy[language].back}>×</button>
           <nav aria-label={labels.navigation}>
             <Link href="/library" prefetch={false}>{labels.title} <i className="nav-arrow" aria-hidden="true" /></Link>
+            <Link href="/library/globe" prefetch={false}>{labels.globe} <i className="nav-arrow" aria-hidden="true" /></Link>
           </nav>
         </div>
       </dialog>

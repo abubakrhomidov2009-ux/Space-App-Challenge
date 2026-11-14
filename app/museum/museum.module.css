@@ -530,6 +530,9 @@
   justify-content: space-between;
 }
 
+.desktopLibrary, .drawerContent nav { display: flex; gap: .5rem; }
+.drawerContent nav { flex-direction: column; }
+
 .heroNav a {
   display: grid;
   place-items: center;

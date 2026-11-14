@@ -127,7 +127,10 @@ export default function Museum() {
   return (
     <main className={styles.museum}>
       <header className={styles.heroNav}>
-        <Link className={styles.desktopLibrary} href="/library" prefetch={false}>{libraryCopy[language].title}</Link>
+        <nav className={styles.desktopLibrary} aria-label={libraryCopy[language].navigation}>
+          <Link href="/library" prefetch={false}>{libraryCopy[language].title}</Link>
+          <Link href="/library/globe" prefetch={false}>{libraryCopy[language].globe}</Link>
+        </nav>
         <MobileMenu language={language} />
         <LanguageSettings language={language} onChange={changeLanguage} />
       </header>
