@@ -219,6 +219,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .library { animation: libraryEnter 250ms ease-out both; }
+  .globeHeader, .globeStatus, .globeCanvas { animation: libraryEnter 700ms ease-out both; }
 }
 
 @keyframes libraryEnter {
