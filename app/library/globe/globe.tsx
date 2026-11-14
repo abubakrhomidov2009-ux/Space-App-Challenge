@@ -124,7 +124,7 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
           <span><i className="nav-arrow" aria-hidden="true" /></span>
         </button>
         <p className={styles.globeStatus} role="status">
-          {unavailable ? copy.unavailable : status[world] === 'error' ? copy.error : status[world] === 'loading' ? copy.loading : world === 'space' ? labels.orbitScale : names[world]}
+          {unavailable ? copy.unavailable : status[world] === 'error' ? copy.error : status[world] === 'loading' ? copy.loading : names[world]}
         </p>
       </div>
     </main>

@@ -280,8 +280,13 @@ export function mountScene(
       marker.hidden = !(models[world] && group.visible && arrival > 0.95 && departure < 0.06
         && (world === 'space' ? site.z > globeCenter.z || Math.hypot(site.x - globeCenter.x, site.y - globeCenter.y) > group.scale.x * 0.69 : site.z - globeCenter.z > group.scale.x * 0.2));
       if (!marker.hidden) {
+        // Apollo 11 and Surveyor 5 landed close together. Separate their hit areas
+        // on the globe while keeping both surface points for the camera zoom.
+        const nearbyMarkerOffset = markers.surveyor5
+          ? id === 'apollo' ? 26 : id === 'surveyor5' ? -26 : 0
+          : 0;
         marker.style.left = `${width / 2 + site.x}px`;
-        marker.style.top = `${height / 2 - site.y}px`;
+        marker.style.top = `${height / 2 - site.y + nearbyMarkerOffset}px`;
       }
     }
 
