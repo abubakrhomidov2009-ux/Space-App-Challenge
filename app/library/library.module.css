@@ -55,9 +55,15 @@
 .cardCopy p:first-child { font-size: .82rem; }
 .detail { display: grid; grid-template-columns: 1fr 1fr; margin-top: 1rem; background: var(--surface); }
 
+/* A rover route or track sits under the text, beside the photo, as on the home page. */
+.detail > :nth-child(3) { grid-column: 2; padding-bottom: 2rem; }
+.detail > figure:has(~ :nth-child(3)) { grid-row: 1 / span 2; }
+
 @media (max-width: 900px) {
   .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .detail { grid-template-columns: 1fr; }
+  .detail > :nth-child(3) { grid-column: 1; }
+  .detail > figure:has(~ :nth-child(3)) { grid-row: auto; }
 }
 
 @media (max-width: 560px) {
@@ -177,12 +183,28 @@
 
 .globeStatus {
   position: absolute;
-  inset: auto 4rem max(1rem, env(safe-area-inset-bottom));
+  left: 50%;
+  bottom: max(1.1rem, env(safe-area-inset-bottom));
+  z-index: 4;
+  translate: -50% 0;
+  max-width: calc(100% - 11rem);
   margin: 0;
+  padding: .7rem 1.5rem;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
   text-align: center;
-  text-shadow: 0 1px 7px #000;
+  white-space: nowrap;
   pointer-events: none;
 }
+
+.globeStatusText { display: inline-flex; align-items: baseline; gap: .8rem; animation: statusIn .7s cubic-bezier(.2, .7, .2, 1) backwards; }
+.globeStatusText strong { font-size: 1.05rem; font-weight: 500; }
+.globeStatusText small { color: #b6b6bd; font-size: .9rem; }
+
+@keyframes statusIn { from { opacity: 0; transform: translateY(6px); } }
+
+@media (prefers-reduced-motion: reduce) { .globeStatusText { animation: none; } }
 
 @media (max-width: 740px) {
   .globe button.previousWorld,

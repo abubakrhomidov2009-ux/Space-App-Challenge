@@ -251,7 +251,9 @@ export function mountScene(
       const group = groups[world];
       const risingRadius = lerp(horizonRadius, radius, arrival);
       group.visible = prominence > 0.001 && arrival > 0.001 && departure < 0.999 && (!still || departure === 0);
-      group.scale.setScalar(risingRadius * (world === 'space' ? 0.77 : 1) * lerp(0.53, 1, prominence) * lerp(1, 0.18, departure));
+      // The outgoing globe shrinks to nothing as it leaves, so it never has to pop out of view.
+      const presence = still ? 1 : smoothstep(prominence, 0, 0.3);
+      group.scale.setScalar(risingRadius * (world === 'space' ? 0.77 : 1) * lerp(0.53, 1, prominence) * lerp(1, 0.18, departure) * presence);
       group.position.set(
         width * (1 - prominence) * (active ? 0.75 : -0.29) * slideDirection,
         -(risingRadius + height * 0.46) * (1 - arrival) + height * departure * 0.26,
@@ -259,6 +261,9 @@ export function mountScene(
       );
       if (active && group.visible && !still && !input.dragging && !input.mission && zoom < 0.03 && time >= input.resumeAt) {
         input[world] -= dt * 0.085 * spin;
+      } else if (!active && group.visible && !still && !input.mission) {
+        // A globe that is leaving keeps turning instead of freezing before it goes.
+        input[world] -= dt * 0.085;
       }
       // Start each frame from the browsing pose, including zero roll.
       // Slerping toward a mission can change all three Euler angles.

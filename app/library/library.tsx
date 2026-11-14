@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { useState } from 'react';
 import LanguageSettings from '../museum/language-settings';
 import MissionContent from '../museum/mission-content';
+import RouteMap from '../museum/route-map';
+import TrackMap from '../museum/track-map';
+import { missionExtras } from '../museum/routes';
 import { museumCopy } from '../museum/languages';
 import { missionIds, missions, type MissionId } from '../museum/missions';
 import { useLanguage } from '../museum/use-language';
@@ -25,6 +28,10 @@ export default function Library({ mission, category }: { mission?: typeof missio
   const labels = libraryCopy[language];
   const copy = museumCopy[language];
 
+  // The mission arrives as a copy from the server page, so match it by its image.
+  const missionId = mission ? missionIds.find((id) => missions[id].image === mission.image) : undefined;
+  const extras = missionId ? missionExtras(missionId) : undefined;
+
   const categoryName = category === 'space' ? labels.space : category ? copy[category] : labels.title;
   const searchTerm = normalize(query);
   const matches = missionIds.filter((id) => {
@@ -43,7 +50,17 @@ export default function Library({ mission, category }: { mission?: typeof missio
       </header>
       {mission ? (
         <section className={styles.detail} aria-labelledby="mission-title">
-          <MissionContent mission={mission} language={language} heading="h1" />
+          <MissionContent mission={mission} language={language} heading="h1">
+            {extras?.track && (
+              <TrackMap track={extras.track} language={language} playKey={0} world={mission.world as 'moon' | 'mars'}
+                sourceUrl={extras.trackSource} lroKm={extras.trackLroKm}
+                lroSource={'distance' in mission.sources ? mission.sources.distance : undefined} />
+            )}
+            {extras?.route && (
+              <RouteMap route={extras.route} language={language} playKey={0} world={mission.world as 'moon' | 'mars'}
+                sourceUrl={extras.routeSource} odometerSource={extras.odometerSource} />
+            )}
+          </MissionContent>
         </section>
       ) : !category ? (
         <>

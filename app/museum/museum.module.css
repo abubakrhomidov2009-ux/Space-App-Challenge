@@ -199,6 +199,69 @@
 .next:active .nextDisc { transform: scale(.96); transition-duration: .2s; }
 
 /* A button that leads back: the arrow points left and the world slides in from the left. */
+/* Satellites on the orbit world's disc. Each follows a tilted ellipse (a sine in x and a sine
+   a quarter turn later in y) and fades out while it passes behind the planet. */
+.orbits {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--size) / 2);
+  width: calc(var(--size) * 1.5);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+
+.orbit {
+  --turn: 9s;
+  --reach: calc(var(--size) * .74);
+  --depth: calc(var(--size) * .2);
+  position: absolute;
+  inset: 0;
+  transform: rotate(-24deg);
+}
+
+.orbit:nth-child(2) {
+  --turn: 13s;
+  --reach: calc(var(--size) * .63);
+  --depth: calc(var(--size) * .15);
+  transform: rotate(31deg);
+}
+
+.orbit i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  animation: satelliteX calc(var(--turn) / 2) cubic-bezier(.37, 0, .63, 1) infinite alternate;
+}
+
+.orbit i::before {
+  content: '';
+  position: absolute;
+  width: .42rem;
+  height: .42rem;
+  margin: -.21rem 0 0 -.21rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 .5rem #fff9;
+  animation:
+    satelliteY calc(var(--turn) / 2) calc(var(--turn) / -4) cubic-bezier(.37, 0, .63, 1) infinite alternate,
+    satelliteDim var(--turn) linear infinite;
+}
+
+.orbit:nth-child(2) i,
+.orbit:nth-child(2) i::before { animation-direction: alternate-reverse, normal; }
+.orbit:nth-child(2) i::before { width: .32rem; height: .32rem; margin: -.16rem 0 0 -.16rem; }
+
+@keyframes satelliteX { from { translate: calc(var(--reach) * -1) 0; } to { translate: var(--reach) 0; } }
+@keyframes satelliteY { from { translate: 0 calc(var(--depth) * -1); } to { translate: 0 var(--depth); } }
+
+/* Hidden while it is behind the disc, in the middle of the far half of the path. */
+@keyframes satelliteDim {
+  0%, 56% { opacity: 1; }
+  63%, 87% { opacity: 0; }
+  94%, 100% { opacity: 1; }
+}
+
 .next[data-side='previous'] { --arrive: -18px; }
 .next[data-side='previous'] .nextDisc svg { transform: scaleX(-1); }
 
@@ -556,6 +619,7 @@
 @media (prefers-reduced-motion: reduce) {
   .markerName, .nextDisc, .nextDisc::before, .nextDisc svg, .nextName { transition: none; }
   .nextDisc, .languageSettings[open] .languageMenu { animation: none; }
+  .orbit i, .orbit i::before { animation: none; }
   .next:hover .nextDisc, .next:focus-visible .nextDisc { transform: none; }
   .next:hover .nextDisc svg, .next:focus-visible .nextDisc svg { transform: none; }
   .next[data-side='previous']:hover .nextDisc svg, .next[data-side='previous']:focus-visible .nextDisc svg { transform: scaleX(-1); }

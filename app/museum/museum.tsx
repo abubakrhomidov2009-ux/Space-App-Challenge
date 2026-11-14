@@ -12,7 +12,7 @@ import MissionDialog from './mission-dialog';
 import LanguageSettings from './language-settings';
 import { museumCopy } from './languages';
 import { homepageMissionIds, missions, type MissionId } from './missions';
-import { odometerSources, routes, routeSources, trackLroKm, tracks, trackSources } from './routes';
+import { missionExtras } from './routes';
 import styles from './museum.module.css';
 
 export default function Museum() {
@@ -101,9 +101,7 @@ export default function Museum() {
         <MobileMenu language={language} />
         <LanguageSettings language={language} onChange={changeLanguage} />
       </header>
-      <MissionDialog {...dialogProps} route={routes[selectedMission]} routeSource={routeSources[selectedMission]}
-        odometerSource={odometerSources[selectedMission]} track={tracks[selectedMission]}
-        trackSource={trackSources[selectedMission]} trackLroKm={trackLroKm[selectedMission]}
+      <MissionDialog {...dialogProps} {...missionExtras(selectedMission)}
         language={language} onLanguageChange={changeLanguage} />
       {homepageMissionIds.map((id) => {
         const name = missions[id].copy[language].name;

@@ -55,3 +55,16 @@ export const routeSources: Partial<Record<MissionId, string>> = {
 export const odometerSources: Partial<Record<MissionId, string>> = {
   spirit: 'https://science.nasa.gov/3d-resources/mars-spirit-rover-path/',
 };
+
+// Everything a story needs to draw its rover route or track, in one place,
+// so the home page, the globe and the library show the same maps.
+export function missionExtras(id: MissionId) {
+  return {
+    route: routes[id],
+    routeSource: routeSources[id],
+    odometerSource: odometerSources[id],
+    track: tracks[id],
+    trackSource: trackSources[id],
+    trackLroKm: trackLroKm[id],
+  };
+}
