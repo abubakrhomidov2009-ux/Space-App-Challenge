@@ -33,7 +33,7 @@ export const timeline: Record<MissionId, Chapter> = {
   lunokhod: { standing: 'lost', arrived: '1970-11-17', since: '1971-09-14', closed: '1971-10-04' },
   change3: { standing: 'placed', arrived: '2013-12-14' },
   vikram: { standing: 'ended', arrived: '2023-08-23', since: '2023-09-04' },
-  slim: { standing: 'ended', arrived: '2024-01-19', since: '2024-08-28' },
+  slim: { standing: 'ended', arrived: '2024-01-19', since: '2024-08-23' },
   spirit: { standing: 'lost', arrived: '2004-01-04', since: '2010-03-22', closed: '2011-05-25' },
   opportunity: { standing: 'lost', arrived: '2004-01-25', since: '2018-06-10', closed: '2019-02-13' },
   viking: { standing: 'lost', arrived: '1976-07-20', since: '1982-11-13' },
@@ -53,8 +53,7 @@ export const timeline: Record<MissionId, Chapter> = {
   mariner9: { standing: 'ended', arrived: '1971-11-14', since: '1972-10-27' },
   'mars-global-surveyor': { standing: 'lost', arrived: '1997-09-11', since: '2006-11-02', closed: '2007-01-28' },
   phobos2: { standing: 'lost', arrived: '1989-01-29', since: '1989-03-27' },
-  // The date contact was lost is not confirmed yet, so no counter is shown.
-  maven: { standing: 'lost', arrived: '2014-09-22' },
+  maven: { standing: 'lost', arrived: '2014-09-22', since: '2025-12-06' },
   hubble: { standing: 'active', arrived: '1990-04-24' },
   spitzer: { standing: 'ended', arrived: '2003-08-25', since: '2020-01-30' },
 };
