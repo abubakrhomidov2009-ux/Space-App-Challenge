@@ -18,6 +18,9 @@ export const museumCopy = {
     archive: 'Архивное фото NASA', illustration: 'Иллюстрация NASA', landing: 'Координаты посадки',
     photo: 'Музейная модель · фото В. П. Галина',
     photoAlt: 'Восьмиколёсная музейная модель «Лунохода‑1» с открытой крышкой',
+    routeLabel: 'Пройденный путь', km: 'км', sol: 'сол', of: 'из',
+    routeStart: 'Посадка', routeEnd: 'Последний заезд', replay: 'Повторить',
+    scrub: 'Положение на маршруте', routeSource: 'Данные маршрута: NASA/PDS, Tim Parker',
   },
   en: {
     language: 'Language', moon: 'Moon', mars: 'Mars', earth: 'Earth',
@@ -35,6 +38,9 @@ export const museumCopy = {
     archive: 'NASA archive photo', illustration: 'NASA illustration', landing: 'Landing coordinates',
     photo: 'Museum model · photo by V. P. Galin',
     photoAlt: 'Eight-wheeled museum model of Lunokhod 1 with its lid open',
+    routeLabel: 'Distance driven', km: 'km', sol: 'sol', of: 'of',
+    routeStart: 'Landing', routeEnd: 'Last drive', replay: 'Replay',
+    scrub: 'Position along the route', routeSource: 'Route data: NASA/PDS, Tim Parker',
   },
   tg: {
     language: 'Забон', moon: 'Моҳ', mars: 'Миррих', earth: 'Замин',
@@ -52,5 +58,8 @@ export const museumCopy = {
     archive: 'Акси бойгонии NASA', illustration: 'Тасвири NASA', landing: 'Координатаҳои фуруд',
     photo: 'Макети осорхона · акси В. П. Галин',
     photoAlt: 'Макети ҳаштчархаи «Луноход‑1» дар осорхона бо сарпӯши кушода',
+    routeLabel: 'Масофаи тайкардашуда', km: 'км', sol: 'сол', of: 'аз',
+    routeStart: 'Фуруд', routeEnd: 'Рондани охирин', replay: 'Такрор',
+    scrub: 'Мавқеъ дар масир', routeSource: 'Маълумоти масир: NASA/PDS, Tim Parker',
   },
 };

@@ -5,10 +5,15 @@ import type { RefObject } from 'react';
 import { museumCopy, type Language } from './languages';
 import LanguageSettings from './language-settings';
 import type { missions, MissionId } from './missions';
+import RouteMap from './route-map';
+import type { Route } from './routes';
 import styles from './museum.module.css';
 
 export default function MissionDialog({
   mission,
+  route,
+  routeSource,
+  routeRun,
   language,
   onLanguageChange,
   dialog,
@@ -18,6 +23,9 @@ export default function MissionDialog({
   onReveal,
 }: {
   mission: typeof missions[MissionId];
+  route?: Route;
+  routeSource?: string;
+  routeRun: number;
   language: Language;
   onLanguageChange: (language: Language) => void;
   dialog: RefObject<HTMLDialogElement | null>;
@@ -30,12 +38,12 @@ export default function MissionDialog({
   const labels = museumCopy[language];
 
   return (
-    <dialog ref={dialog} className={styles.mission} data-closing={closing}
+    <dialog ref={dialog} className={styles.mission} data-closing={closing} tabIndex={-1}
       aria-labelledby="mission-title" onCancel={(event) => {
         event.preventDefault();
         onClose();
       }}>
-      <div className={styles.missionPanel} onAnimationEnd={(event) => {
+      <div className={styles.missionPanel} data-route={Boolean(route)} onAnimationEnd={(event) => {
         if (event.target !== event.currentTarget) return;
         if (closing) onExit();
         else onReveal();
@@ -57,6 +65,10 @@ export default function MissionDialog({
             <a href={mission.sources.coordinates}>{mission.siteKind === 'landing' ? labels.landing : labels.coordinates}</a>
           </p>
         </article>
+        {route && (
+          <RouteMap route={route} language={language} playKey={routeRun}
+            world={mission.world} sourceUrl={routeSource} />
+        )}
       </div>
       <div key={closing ? 'closing' : 'opening'} className={styles.missionFog} data-fog={mission.world} aria-hidden="true" />
     </dialog>

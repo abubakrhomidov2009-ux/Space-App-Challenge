@@ -8,6 +8,7 @@ import MissionDialog from './mission-dialog';
 import LanguageSettings from './language-settings';
 import { museumCopy, type Language } from './languages';
 import { missionIds, missions, type MissionId } from './missions';
+import { routes, routeSources } from './routes';
 import styles from './museum.module.css';
 
 export default function Museum() {
@@ -16,6 +17,8 @@ export default function Museum() {
   const dialog = useRef<HTMLDialogElement>(null);
   const rotation = useRef<HTMLDivElement>(null);
   const [closing, setClosing] = useState(false);
+  // Counts story openings so the route replays each time one opens.
+  const [routeRun, setRouteRun] = useState(0);
   const sky = useRef<HTMLDivElement>(null);
   const explore = useRef<HTMLElement>(null);
   const finale = useRef<HTMLElement>(null);
@@ -108,11 +111,14 @@ export default function Museum() {
   function openMission(id: MissionId) {
     if (!dialog.current || dialog.current.open) return;
     setSelectedMission(id);
+    setRouteRun((count) => count + 1);
     // The marker hides on open, so its pointerleave may never fire.
     window.clearTimeout(releaseTimer.current);
     input.current.hovering = false;
     input.current.mission = id;
     dialog.current.showModal();
+    // showModal focuses the first button, which would show a focus ring after a click.
+    dialog.current.focus({ preventScroll: true });
   }
 
   function finishMission() {
@@ -145,7 +151,7 @@ export default function Museum() {
   return (
     <main className={styles.museum}>
       <LanguageSettings language={language} onChange={changeLanguage} />
-      <MissionDialog mission={missions[selectedMission]} language={language} onLanguageChange={changeLanguage} dialog={dialog} closing={closing} onClose={closeMission} onReveal={() => { input.current.missionCovered = true; }} onExit={finishMission} />
+      <MissionDialog mission={missions[selectedMission]} route={routes[selectedMission]} routeSource={routeSources[selectedMission]} routeRun={routeRun} language={language} onLanguageChange={changeLanguage} dialog={dialog} closing={closing} onClose={closeMission} onReveal={() => { input.current.missionCovered = true; }} onExit={finishMission} />
       {missionIds.map((id) => {
         const name = missions[id].copy[language].name;
         return (
