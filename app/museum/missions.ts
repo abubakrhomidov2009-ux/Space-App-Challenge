@@ -1,3 +1,5 @@
+import { catalogExpansion } from './catalog-expansion';
+import { hubble } from './hubble';
 import { additionalMissions } from './additional-missions';
 import { lunokhod } from './lunokhod';
 
@@ -5,8 +7,10 @@ const marsCoordinates = 'https://www-robotics.jpl.nasa.gov/media/documents/05per
 
 export const missions = {
   ...additionalMissions,
-  lunokhod: { ...lunokhod, world: 'moon', image: '/lunokhod-1.webp', imageKind: 'model', siteKind: 'position' },
-  apollo: {
+  ...catalogExpansion,
+  hubble,
+  lunokhod: { kind: 'rover', ...lunokhod, world: 'moon', image: '/lunokhod-1.webp', imageKind: 'model', siteKind: 'position' },
+  apollo: { kind: 'lander',
     world: 'moon', latitude: 0.67409, longitude: 23.47298,
     image: '/apollo.webp', imageKind: 'archive', siteKind: 'position',
     sources: {
@@ -29,7 +33,7 @@ export const missions = {
       ] },
     },
   },
-  spirit: {
+  spirit: { kind: 'rover',
     world: 'mars', latitude: -14.5692, longitude: 175.4729,
     image: '/spirit.webp', imageKind: 'illustration', siteKind: 'landing',
     sources: {
@@ -51,7 +55,7 @@ export const missions = {
       ] },
     },
   },
-  opportunity: {
+  opportunity: { kind: 'rover',
     world: 'mars', latitude: -1.9462, longitude: 354.4734,
     image: '/opportunity.webp', imageKind: 'illustration', siteKind: 'landing',
     sources: {
@@ -77,3 +81,13 @@ export const missions = {
 
 export type MissionId = keyof typeof missions;
 export const missionIds = Object.keys(missions) as MissionId[];
+
+// Each entry uses the shared telescope mesh. Positions are illustrative.
+export const orbitExhibits = ([
+  { id: 'hubble', position: [0.78, 0.18, 0.68] },
+  { id: 'spitzer', position: [-0.94, -0.28, 0.54] },
+] as const).slice(0, 6);
+
+export const globeMissionIds = missionIds.filter((id) =>
+  missions[id].world !== 'space' || orbitExhibits.some((exhibit) => exhibit.id === id),
+);

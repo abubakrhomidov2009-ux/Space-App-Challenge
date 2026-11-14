@@ -257,8 +257,10 @@
   overscroll-behavior: contain;
 }
 
-.mission[open] .missionPanel { animation: missionReveal 1580ms both; }
+.mission[open] .missionPanel { opacity: 0; }
+.mission[open][data-revealing='true'] .missionPanel { animation: missionReveal 880ms both; }
 .mission[open][data-closing='true'] .missionPanel { animation: missionHide 1280ms both; }
+.mission[open][data-closing='true'][data-revealing='false'] .missionPanel { visibility: hidden; }
 
 .missionBack {
   position: fixed;
@@ -374,19 +376,31 @@
   --cloud-covered: translateX(0) scaleX(-1);
 }
 
-.mission[open] {
-  --fog-duration: 1580ms;
-}
-
-.mission[open][data-closing='true'] {
-  --fog-duration: 1280ms;
-}
-
-.mission[open] .missionFog { animation: fogTimeline var(--fog-duration) both; }
+.mission[open] .missionFog { animation: fogTimeline 700ms both; }
 
 .mission[open] .missionFog::before,
 .mission[open] .missionFog::after {
-  animation: cloudSweep var(--fog-duration) ease-in-out both;
+  animation: cloudClose 700ms ease-in-out both;
+}
+
+.mission[open][data-revealing='true'] .missionFog::before,
+.mission[open][data-revealing='true'] .missionFog::after {
+  animation: cloudOpen 880ms ease-in-out both;
+}
+
+.mission[open][data-closing='true'] .missionFog::before,
+.mission[open][data-closing='true'] .missionFog::after {
+  animation: cloudSweep 1280ms ease-in-out both;
+}
+
+@keyframes cloudClose {
+  from { transform: var(--cloud-outside); }
+  to { transform: var(--cloud-covered); }
+}
+
+@keyframes cloudOpen {
+  0%, 18% { transform: var(--cloud-covered); }
+  100% { transform: var(--cloud-outside); }
 }
 
 @keyframes cloudSweep {
@@ -400,8 +414,8 @@
 }
 
 @keyframes missionReveal {
-  0%, 45% { opacity: 0; }
-  56%, 100% { opacity: 1; }
+  0% { opacity: 0; }
+  18%, 100% { opacity: 1; }
 }
 
 @keyframes missionHide {
@@ -420,6 +434,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .markerName { transition: none; }
+  .mission[open] .missionPanel { opacity: 1; }
+  .missionFog { display: none; }
   .marker::before, .mission[open] .missionPanel, .mission[open] .missionFog,
   .mission[open] .missionFog::before, .mission[open] .missionFog::after { animation: none; }
 }
@@ -502,4 +518,104 @@
 
 .missionPhoto[data-world='mars'] img {
   filter: saturate(.8) brightness(.83);
+}
+
+.heroNav {
+  position: absolute;
+  inset: max(.75rem, env(safe-area-inset-top)) max(.75rem, env(safe-area-inset-right)) auto max(.75rem, env(safe-area-inset-left));
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  justify-content: space-between;
+}
+
+.desktopLibrary, .drawerContent nav { display: flex; gap: .5rem; }
+.drawerContent nav { flex-direction: column; }
+
+.heroNav a {
+  display: grid;
+  place-items: center;
+  min-height: 2.75rem;
+  padding-inline: .85rem;
+  border: 1px solid #ffffff30;
+  border-radius: 999px;
+  background: #101218a8;
+  text-decoration: none;
+}
+
+.heroNav a:hover { background: #202735; }
+.heroNav .languageSettings { position: relative; inset: auto; }
+
+.mobileNav { display: none; }
+
+@media (max-width: 740px) {
+  .heroNav .desktopLibrary { display: none; }
+  .mobileNav { display: block; position: relative; }
+
+  .menuToggle {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 1px solid #ffffff30;
+    border-radius: 50%;
+    background: #101218;
+    color: white;
+    font-size: 1.5rem;
+  }
+
+  .menuBars {
+    width: 1rem;
+    height: 2px;
+    background: currentColor;
+    box-shadow: 0 -5px currentColor, 0 5px currentColor;
+  }
+}
+
+.mobileDrawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(82vw, 21rem);
+  height: 100%;
+  max-height: none;
+  max-width: none;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid #ffffff25;
+  background: #101218;
+  color: white;
+}
+
+.drawerContent {
+  display: grid;
+  align-content: start;
+  gap: 2rem;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem 1rem max(1rem, env(safe-area-inset-left));
+}
+
+.heroNav .drawerContent a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: .45rem;
+}
+
+.mobileDrawer::backdrop { background: #0009; }
+.mobileDrawer[open] { animation: drawerSlide 260ms ease-out both; }
+.mobileDrawer[open][data-closing='true'] { animation: drawerClose 230ms ease-in both; }
+.mobileDrawer[open]::backdrop { animation: drawerShade 260ms ease-out both; }
+.mobileDrawer[open][data-closing='true']::backdrop { animation: drawerShade 230ms ease-in reverse both; }
+
+@keyframes drawerSlide { from { transform: translateX(-100%); } }
+@keyframes drawerClose { to { transform: translateX(-100%); } }
+@keyframes drawerShade { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .mobileDrawer[open], .mobileDrawer[open]::backdrop { animation: none; }
 }

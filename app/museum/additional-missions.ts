@@ -1,5 +1,5 @@
 export const additionalMissions = {
-  surveyor: {
+  surveyor: { kind: 'lander',
     world: 'moon', latitude: -3.0162, longitude: -23.418,
     image: '/surveyor.webp', imageKind: 'archive', siteKind: 'position',
     sources: {
@@ -22,7 +22,7 @@ export const additionalMissions = {
       ] },
     },
   },
-  apollo15: {
+  apollo15: { kind: 'rover',
     world: 'moon', latitude: 26.13239, longitude: 3.63330,
     image: '/apollo15.webp', imageKind: 'archive', siteKind: 'landing',
     sources: {
@@ -45,7 +45,7 @@ export const additionalMissions = {
       ] },
     },
   },
-  viking: {
+  viking: { kind: 'lander',
     world: 'mars', latitude: 22.27, longitude: 312.05,
     image: '/viking.webp', imageKind: 'vikingModel', siteKind: 'position',
     sources: {
@@ -68,7 +68,7 @@ export const additionalMissions = {
       ] },
     },
   },
-  pathfinder: {
+  pathfinder: { kind: 'combined',
     world: 'mars', latitude: 19.07, longitude: 326.48,
     image: '/pathfinder.webp', imageKind: 'jplPhoto', siteKind: 'landing',
     sources: {

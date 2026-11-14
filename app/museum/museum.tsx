@@ -1,56 +1,34 @@
 'use client';
 
+import Link from 'next/link';
+import { useLanguage } from './use-language';
+import { libraryCopy } from '../library/labels';
 import Image from 'next/image';
-import { preload } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
 import type { Destination, SceneInput, SceneStatus } from './scene';
+import MobileMenu from './mobile-menu';
+import { useMissionDialog } from './use-mission-dialog';
 import MissionDialog from './mission-dialog';
 import LanguageSettings from './language-settings';
-import { museumCopy, type Language } from './languages';
+import { museumCopy } from './languages';
 import { missionIds, missions, type MissionId } from './missions';
 import styles from './museum.module.css';
 
 export default function Museum() {
   const markers = useRef<Partial<Record<MissionId, HTMLButtonElement>>>({});
-  const [selectedMission, setSelectedMission] = useState<MissionId>('lunokhod');
-  const dialog = useRef<HTMLDialogElement>(null);
   const rotation = useRef<HTMLDivElement>(null);
-  const [closing, setClosing] = useState(false);
   const sky = useRef<HTMLDivElement>(null);
   const explore = useRef<HTMLElement>(null);
   const finale = useRef<HTMLElement>(null);
-  const input = useRef<SceneInput>({ destination: 'moon', moon: 0, mars: Math.PI * 0.43, dragging: false, resumeAt: 0, mission: null, missionCovered: false });
+  const input = useRef<SceneInput>({ destination: 'moon', moon: 0, mars: Math.PI * 0.43, space: 0, dragging: false, resumeAt: 0, mission: null, missionCovered: false });
+  const { openMission, dialogProps } = useMissionDialog(input, rotation);
   const drag = useRef<{ id: number; x: number } | null>(null);
-  const [destination, setDestination] = useState<Destination>('moon');
-  const [status, setStatus] = useState<SceneStatus>({ moon: 'loading', mars: 'loading', earth: 'loading' });
+  const [destination, setDestination] = useState<Exclude<Destination, 'space'>>('moon');
+  const [status, setStatus] = useState<SceneStatus>({ moon: 'loading', mars: 'loading', earth: 'loading', space: 'loading' });
   const [unavailable, setUnavailable] = useState(false);
-  const [language, setLanguage] = useState<Language>('ru');
+  const { language, changeLanguage } = useLanguage();
   const copy = museumCopy[language];
   const nextDestination = destination === 'moon' ? 'mars' : 'moon';
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('tmas-language');
-      if (saved === 'ru' || saved === 'en' || saved === 'tg') {
-        setLanguage(saved);
-        document.documentElement.lang = saved;
-      }
-    } catch {
-      // The selector still works with storage disabled.
-    }
-    return () => { document.documentElement.lang = 'ru'; };
-  }, []);
-
-  function changeLanguage(next: Language) {
-    setLanguage(next);
-    document.documentElement.lang = next;
-    try {
-      localStorage.setItem('tmas-language', next);
-    } catch {
-      // The selection still applies for this visit.
-    }
-
-  }
 
   useEffect(() => {
     const host = sky.current;
@@ -80,39 +58,6 @@ export default function Museum() {
     input.current.resumeAt = performance.now() + 3000;
   }
 
-  useEffect(() => {
-    for (const mission of Object.values(missions)) {
-      if (mission.world === destination) preload(mission.image, { as: 'image' });
-    }
-  }, [destination]);
-
-  function openMission(id: MissionId) {
-    if (!dialog.current || dialog.current.open) return;
-    setSelectedMission(id);
-    input.current.mission = id;
-    dialog.current.showModal();
-  }
-
-  function finishMission() {
-    input.current.missionCovered = false;
-    input.current.mission = null;
-    input.current.resumeAt = performance.now() + 3000;
-    dialog.current?.close();
-    setClosing(false);
-    rotation.current?.focus({ preventScroll: true });
-  }
-
-  function closeMission() {
-    if (closing) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      finishMission();
-      return;
-    }
-    input.current.missionCovered = false;
-    input.current.mission = null;
-    input.current.resumeAt = performance.now() + 3000;
-    setClosing(true);
-  }
 
   const message = unavailable
     ? copy.unavailable
@@ -122,9 +67,16 @@ export default function Museum() {
 
   return (
     <main className={styles.museum}>
-      <LanguageSettings language={language} onChange={changeLanguage} />
-      <MissionDialog mission={missions[selectedMission]} language={language} onLanguageChange={changeLanguage} dialog={dialog} closing={closing} onClose={closeMission} onReveal={() => { input.current.missionCovered = true; }} onExit={finishMission} />
-      {missionIds.map((id) => {
+      <header className={styles.heroNav}>
+        <nav className={styles.desktopLibrary} aria-label={libraryCopy[language].navigation}>
+          <Link href="/library" prefetch={false}>{libraryCopy[language].title}</Link>
+          <Link href="/library/globe" prefetch={false}>{libraryCopy[language].globe}</Link>
+        </nav>
+        <MobileMenu language={language} />
+        <LanguageSettings language={language} onChange={changeLanguage} />
+      </header>
+      <MissionDialog {...dialogProps} language={language} onLanguageChange={changeLanguage} />
+      {missionIds.filter((id) => missions[id].world !== 'space').map((id) => {
         const name = missions[id].copy[language].name;
         return (
           <button key={id} ref={(element) => {
@@ -138,7 +90,7 @@ export default function Museum() {
       })}
       <div ref={sky} className={styles.sky} aria-hidden="true" />
       <section className={styles.hero} aria-labelledby="museum-title">
-        <Image className={styles.logo} src="/tmas-logo.jpg" width={480} height={480} priority
+        <Image className={styles.logo} src="/tmas-logo.jpg" width={480} height={480} preload
           alt="TMAS — Museum of Abandoned Space" />
         <h1 id="museum-title">{copy.title}</h1>
         <p>{copy.intro}</p>
@@ -175,7 +127,7 @@ export default function Museum() {
             input.current.destination = nextDestination;
             setDestination(nextDestination);
           }} aria-label={`${copy.show} · ${copy[nextDestination]}`}>
-            <span aria-hidden="true">→</span>
+            <span><i className="nav-arrow" aria-hidden="true" /></span>
           </button>
           <p className={styles.hint} role="status">{message}</p>
         </div>
