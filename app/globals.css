@@ -49,6 +49,8 @@ button { font: inherit; cursor: pointer; }
 
 html { scrollbar-gutter: stable; }
 
+html:has(main > section[class*="hero"]) { scroll-snap-type: y proximity; }
+
 html:has(dialog[open]) { overflow: hidden; }
 
 .nav-arrow {

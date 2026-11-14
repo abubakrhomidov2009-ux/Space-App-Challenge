@@ -92,6 +92,47 @@ export function mountScene(
     }),
   );
   groups.earth.add(atmosphere);
+
+  // A soft halo just beyond the limb of a world, brightest on the sunlit side.
+  // The shell is drawn from the inside (back faces), so only the ring outside the planet shows.
+  const HALO = 1.075;
+  const halos = ([
+    ['moon', [0.74, 0.8, 0.95], 0.26],
+    ['mars', [0.9, 0.5, 0.32], 0.26],
+  ] as const).map(([world, color, strength]) => {
+    const halo = new THREE.Mesh(
+      new THREE.SphereGeometry(HALO, 48, 24),
+      new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        side: THREE.BackSide,
+        uniforms: { tint: { value: new THREE.Color(...color) }, strength: { value: strength }, limb: { value: Math.sqrt(1 - 1 / (HALO * HALO)) } },
+        vertexShader: `
+          varying vec3 shellNormal;
+          void main() {
+            shellNormal = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 tint;
+          uniform float strength;
+          uniform float limb;
+          varying vec3 shellNormal;
+          void main() {
+            vec3 n = normalize(shellNormal);
+            // 1 at the planet's edge, 0 at the outer edge of the shell.
+            float ring = clamp(abs(n.z) / limb, 0.0, 1.0);
+            float falloff = pow(ring, 2.4);
+            float light = smoothstep(-0.5, 0.8, dot(n, normalize(vec3(-0.55, 0.8, 0.1)))) * 0.8 + 0.2;
+            gl_FragColor = vec4(tint, falloff * light * strength);
+          }
+        `,
+      }),
+    );
+    groups[world].add(halo);
+    return halo;
+  });
   const models: Partial<Record<World, THREE.Group>> = {};
   const loading = new Set<World>();
   const loader = new GLTFLoader();
@@ -169,15 +210,26 @@ export function mountScene(
   });
   resize.observe(host);
 
+  // Section positions are measured in the page once (and when the layout changes), then
+  // turned into viewport positions from scrollY every frame. Reading layout on every scroll
+  // event forced a reflow mid-scroll, and the value arrived a frame after the page had moved.
+  let exploreDocTop = 0;
+  let finaleDocTop = Infinity;
   let exploreTop = 0;
-  let finaleTop = 0;
-  function measureScroll() {
-    exploreTop = explore?.getBoundingClientRect().top ?? 0;
-    finaleTop = finale?.getBoundingClientRect().top ?? Infinity;
+  let finaleTop = Infinity;
+  function measureLayout() {
+    exploreDocTop = explore ? explore.getBoundingClientRect().top + window.scrollY : 0;
+    finaleDocTop = finale ? finale.getBoundingClientRect().top + window.scrollY : Infinity;
   }
-  measureScroll();
-  window.addEventListener('scroll', measureScroll, { passive: true });
-  window.addEventListener('resize', measureScroll);
+  function readScroll() {
+    exploreTop = exploreDocTop - window.scrollY;
+    finaleTop = finaleDocTop - window.scrollY;
+  }
+  measureLayout();
+  readScroll();
+  const layoutWatch = new ResizeObserver(measureLayout);
+  if (explore?.parentElement) layoutWatch.observe(explore.parentElement);
+  window.addEventListener('resize', measureLayout);
 
   let lastFrame = 0;
   let scroll = 1 - exploreTop / window.innerHeight;
@@ -185,6 +237,22 @@ export function mountScene(
   let displayed = input.destination;
   let slideDirection = 1;
   const handoff = { moon: 0, mars: 0, space: 0 };
+  handoff[input.destination] = 1;
+  // The first screen shows the Moon's limb rising over the bottom edge. This eases it in
+  // once its model is ready, and the scroll then lifts it into the full globe.
+  let heroIn = 0;
+  let starsIn = still0() ? 1 : 0;
+  function still0() { return reduced.matches; }
+  // Pointer parallax: -1..1 across the window, eased, plus a very slow idle drift.
+  let pointerX = 0;
+  let pointerY = 0;
+  let targetX = 0;
+  let targetY = 0;
+  const onPointer = (event: PointerEvent) => {
+    targetX = (event.clientX / width - 0.5) * 2;
+    targetY = (event.clientY / height - 0.5) * 2;
+  };
+  window.addEventListener('pointermove', onPointer, { passive: true });
   let zoom = 0;
   // Share of the idle spin speed. Eases to 0 over a point and back to 1 after.
   let spin = 1;
@@ -220,6 +288,7 @@ export function mountScene(
     const dt = Math.min(0.05, (time - lastFrame) / 1000);
     lastFrame = time;
     if (input.missionCovered) return;
+    readScroll();
 
     ensure(input.destination);
     if (standalone && input.destination === 'space') ensure('earth');
@@ -229,8 +298,8 @@ export function mountScene(
     const still = reduced.matches;
     const scrollTarget = 1 - exploreTop / height;
     const endingTarget = finaleTop / height;
-    scroll = still ? scrollTarget : damp(scroll, scrollTarget, 11, dt);
-    ending = standalone ? 2 : still ? endingTarget : damp(ending, endingTarget, 11, dt);
+    scroll = still ? scrollTarget : damp(scroll, scrollTarget, 22, dt);
+    ending = standalone ? 2 : still ? endingTarget : damp(ending, endingTarget, 22, dt);
     if (models[input.destination] && displayed !== input.destination) {
       slideDirection = input.switchDirection ?? 1;
       displayed = input.destination;
@@ -240,6 +309,18 @@ export function mountScene(
     // Leave room for the outgoing globe to recede before Earth's horizon enters.
     const departure = still ? Number(ending < 0.35) : 1 - smoothstep(ending, 0.33, 0.94);
     const earthArrival = still ? departure : 1 - smoothstep(ending, -0.04, 0.48);
+    // Opening sequence: the stars come up first, the text follows (CSS), and only then does the
+    // planet rise. Whichever world is chosen keeps standing on the horizon back at the top.
+    const introDelay = time > 700;
+    heroIn = still ? Number(Boolean(models[displayed])) : damp(heroIn, models[displayed] && introDelay ? 1 : 0, 1.4, dt);
+    // Once the planet is clearly on its way up, the text may appear.
+    if (heroIn > 0.3 && host.parentElement?.dataset.intro !== 'up') host.parentElement?.setAttribute('data-intro', 'up');
+    starsIn = still ? 1 : damp(starsIn, 1, 1.8, dt);
+    const horizon = standalone ? 0 : smoothstep(heroIn, 0, 1);
+    pointerX = still ? 0 : damp(pointerX, targetX, 3, dt);
+    pointerY = still ? 0 : damp(pointerY, targetY, 3, dt);
+    const driftX = still ? 0 : pointerX + Math.sin(time / 5200) * 0.22;
+    const driftY = still ? 0 : pointerY + Math.cos(time / 6400) * 0.16;
     const radius = Math.min(width * 0.49, height * 0.48);
     const horizonRadius = Math.max(width * 0.66, height * 0.59);
 
@@ -250,13 +331,14 @@ export function mountScene(
       const prominence = smoothstep(handoff[world], 0, 1);
       const group = groups[world];
       const risingRadius = lerp(horizonRadius, radius, arrival);
-      group.visible = prominence > 0.001 && arrival > 0.001 && departure < 0.999 && (!still || departure === 0);
+      const heroVisible = horizon > 0.001 && active;
+      group.visible = prominence > 0.001 && (arrival > 0.001 || heroVisible) && departure < 0.999 && (!still || departure === 0);
       // The outgoing globe shrinks to nothing as it leaves, so it never has to pop out of view.
       const presence = still ? 1 : smoothstep(prominence, 0, 0.3);
       group.scale.setScalar(risingRadius * (world === 'space' ? 0.77 : 1) * lerp(0.53, 1, prominence) * lerp(1, 0.18, departure) * presence);
       group.position.set(
-        width * (1 - prominence) * (active ? 0.75 : -0.29) * slideDirection,
-        -(risingRadius + height * 0.46) * (1 - arrival) + height * departure * 0.26,
+        width * (1 - prominence) * (active ? 0.75 : -0.29) * slideDirection - driftX * 11,
+        -(risingRadius + height * 0.46) * (1 - arrival) + height * 0.25 * horizon * (1 - arrival) - height * 0.3 * (1 - horizon) * (1 - arrival) + height * departure * 0.26 + driftY * 7,
         -850 * (1 - prominence) - 900 * departure,
       );
       if (active && group.visible && !still && !input.dragging && !input.mission && zoom < 0.03 && time >= input.resumeAt) {
@@ -338,8 +420,11 @@ export function mountScene(
       earth.position.copy(groups.space.position);
       earth.rotation.set(0.14, input.space, -0.24);
     }
-    stars.position.y = still ? 0 : 95 * arrival + 140 * departure;
-    stars.material.opacity = lerp(1, 0.48, earthArrival);
+    stars.position.y = still ? 0 : 95 * arrival + 140 * departure - driftY * 3;
+    stars.position.x = still ? 0 : driftX * 5;
+    stars.material.opacity = lerp(1, 0.48, earthArrival) * starsIn;
+    // Brighter, larger stars on the first screen, easing back as the globes take over.
+    stars.material.size = lerp(2.1, 1.45, smoothstep(arrival, 0, 0.6));
     stars.material.transparent = true;
     renderer.render(scene, camera);
   });
@@ -348,13 +433,18 @@ export function mountScene(
     disposed = true;
     requests.abort();
     draco.dispose();
-    window.removeEventListener('scroll', measureScroll);
-    window.removeEventListener('resize', measureScroll);
+    layoutWatch.disconnect();
+    window.removeEventListener('pointermove', onPointer);
+    window.removeEventListener('resize', measureLayout);
     resize.disconnect();
     renderer.setAnimationLoop(null);
     for (const model of Object.values(models)) disposeModel(model);
     atmosphere.geometry.dispose();
     atmosphere.material.dispose();
+    for (const halo of halos) {
+      halo.geometry.dispose();
+      halo.material.dispose();
+    }
     stars.geometry.dispose();
     stars.material.dispose();
     renderer.dispose();

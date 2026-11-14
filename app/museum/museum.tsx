@@ -39,6 +39,9 @@ export default function Museum() {
     let cancelled = false;
     let cleanup: (() => void) | undefined;
 
+    // If the scene is slow or unavailable the text still appears.
+    const reveal = window.setTimeout(() => host.parentElement?.setAttribute('data-intro', 'up'), 4500);
+
     import('./scene').then(({ mountScene }) => {
       if (cancelled) return;
       cleanup = mountScene(host, gallery, ending, input.current, markers.current, (planet, phase) => {
@@ -50,6 +53,7 @@ export default function Museum() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(reveal);
       cleanup?.();
     };
   }, []);
@@ -119,7 +123,7 @@ export default function Museum() {
       })}
       <div ref={sky} className={styles.sky} aria-hidden="true" />
       <section className={styles.hero} aria-labelledby="museum-title">
-        <Image className={styles.logo} src="/tmas-logo.jpg" width={480} height={480} preload
+        <Image className={styles.logo} src="/tmas-logo.webp" width={480} height={480} preload
           alt="TMAS — Museum of Abandoned Space" />
         <h1 id="museum-title">{copy.title}</h1>
         <p>{copy.intro}</p>

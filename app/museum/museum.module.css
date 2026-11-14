@@ -29,15 +29,15 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 2rem var(--gutter) 3rem;
+  /* The lower third belongs to the Moon's horizon. */
+  padding: 2rem var(--gutter) clamp(7rem, 31svh, 16rem);
 }
 
 .logo {
   display: block;
-  width: min(62vw, 18rem, 40svh);
+  width: min(62vw, 16rem, 32svh);
   height: auto;
   margin-bottom: clamp(-2rem, -3vw, -.8rem);
-  mix-blend-mode: screen;
 }
 
 .hero h1,
@@ -51,6 +51,25 @@
 
 .hero h1 { font-size: clamp(2.9rem, 8.5vw, 8rem); }
 
+/* Opening: the text stays hidden until the planet is on its way up, then the logo, the
+   headline and the line under it surface in turn. Opacity and transform only, so it runs
+   on the compositor and stays smooth while the scene is busy. */
+.hero .logo, .hero h1, .hero p { opacity: 0; will-change: opacity, transform; }
+
+.museum[data-intro='up'] .hero .logo,
+.museum[data-intro='up'] .hero h1,
+.museum[data-intro='up'] .hero p { animation: heroText .9s cubic-bezier(.2, .7, .2, 1) both; }
+
+.museum[data-intro='up'] .hero h1 { animation-delay: .1s; }
+.museum[data-intro='up'] .hero p { animation-delay: .22s; }
+
+@keyframes heroText { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero .logo, .hero h1, .hero p { opacity: 1; will-change: auto; }
+  .museum[data-intro='up'] .hero .logo, .museum[data-intro='up'] .hero h1, .museum[data-intro='up'] .hero p { animation: none; }
+}
+
 .hero p,
 .earthCopy p {
   max-width: 32ch;
@@ -61,6 +80,10 @@
 }
 
 .explore { min-height: 160svh; }
+
+/* Rest points: when a scroll ends close to one of these, the page settles onto it,
+   so the globe is never left half-risen. Proximity keeps free scrolling everywhere else. */
+.hero, .explore, .finale { scroll-snap-align: start; }
 
 .exploreFrame {
   position: sticky;
