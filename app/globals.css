@@ -85,3 +85,8 @@ html:has(dialog[open]) { overflow: hidden; }
 }
 
 .nav-arrow-left { transform: rotate(180deg); }
+
+/* A reordering list animates its own cards; the page behind it must not cross-fade. */
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; }
+::view-transition-group(*) { animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .7, .2, 1); }

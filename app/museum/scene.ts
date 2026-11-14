@@ -3,12 +3,18 @@ import * as THREE from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { disposeModel, normalizeModel } from './models';
+import { hubLayout } from '../library/hub-layout';
 
 export type Destination = 'moon' | 'mars' | 'space';
 type World = Destination | 'earth';
 type ModelStatus = 'loading' | 'ready' | 'error';
 export type SceneStatus = Record<World, ModelStatus>;
-export type SceneInput = { destination: Destination; moon: number; mars: number; space: number; dragging: boolean; hovering: boolean; resumeAt: number; mission: MissionId | null; missionCovered: boolean; switchDirection?: -1 | 1 };
+export type SceneInput = { destination: Destination; moon: number; mars: number; space: number; dragging: boolean; hovering: boolean; resumeAt: number; mission: MissionId | null; missionCovered: boolean; switchDirection?: -1 | 1;
+  // Library entrance: all three worlds stand side by side. `focus` brings one to the centre,
+  // `hover` lifts the one under the pointer.
+  hub?: boolean; focus?: Destination | null; hover?: Destination | null;
+  // How far the camera closes in on `mission` (1 is all the way, the default).
+  zoomTo?: number };
 
 const { lerp, smoothstep, damp } = THREE.MathUtils;
 
@@ -239,6 +245,10 @@ export function mountScene(
   // The standalone globe page: the planet rises in once its model is ready instead of popping in.
   let entryIn = standalone && !reduced.matches ? 0 : 1;
   let markerIn = 0;
+  let hubFocus = 0;
+  let hubReadyAt = 0;
+  const startedAt = performance.now();
+  const hubHover = { moon: 0, mars: 0, space: 0 };
   const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
   const soft = (value: number) => value * value * value * (value * (value * 6 - 15) + 10);
   const handoff = { moon: 0, mars: 0, space: 0 };
@@ -316,6 +326,7 @@ export function mountScene(
     readScroll();
 
     ensure(input.destination);
+    if (input.hub) for (const world of ['moon', 'mars', 'space', 'earth'] as const) ensure(world);
     if (standalone && input.destination === 'space') ensure('earth');
     if (!standalone && models.moon && exploreTop < height * 0.6) ensure('mars');
     if (finaleTop < height * 1.1) ensure('earth');
@@ -352,7 +363,36 @@ export function mountScene(
     const horizonRadius = Math.max(width * 0.66, height * 0.59);
 
     spin = still ? 0 : damp(spin, input.hovering ? 0 : 1, input.hovering ? 3 : 1.6, dt);
+    const hubSlots = hubLayout(width, height);
+    hubFocus = still ? Number(Boolean(input.focus)) : damp(hubFocus, input.focus ? 1 : 0, 4.2, dt);
+    // The worlds appear together, one after another, only once every model has loaded. Parsing a
+    // model mid-animation would stall the frames, so nothing moves while they are still arriving.
+    if (input.hub && !hubReadyAt && ((models.moon && models.mars && models.space && models.earth) || time - startedAt > 9000)) hubReadyAt = time;
+    const hubEase = smoothstep(hubFocus, 0, 1);
     for (const world of ['moon', 'mars', 'space'] as const) {
+      if (input.hub) {
+        const slot = hubSlots[world];
+        const own = input.focus === world;
+        const order = world === 'moon' ? 0 : world === 'mars' ? 1 : 2;
+        const reveal = !hubReadyAt || !models[world] ? 0 : still ? 1 : clamp01((time - hubReadyAt - order * 140) / 1100);
+        hubHover[world] = still ? 0 : damp(hubHover[world], input.hover === world && !input.focus ? 1 : 0, 6, dt);
+        const show = soft(reveal);
+        // The chosen world grows into the middle of the view; the others ease away and dim out.
+        const grow = own ? hubEase : 0;
+        const fade = own ? 1 : 1 - hubEase;
+        const size = lerp(slot.r, radius * 0.92, grow) * (1 + 0.045 * hubHover[world]) * lerp(0.72, 1, show) * fade;
+        const hubGroup = groups[world];
+        hubGroup.visible = show > 0.002 && fade > 0.002;
+        hubGroup.scale.setScalar(Math.max(size * (world === 'space' ? lerp(1.32, 0.77, grow) : 1), 0.001));
+        hubGroup.position.set(
+          lerp(slot.x, 0, grow) + (own ? 0 : slot.x * 0.3 * hubEase) - driftX * 8,
+          lerp(slot.y, 0, grow) - driftY * 5 - (1 - show) * height * 0.04,
+          -500 * (1 - fade),
+        );
+        if (hubGroup.visible && !still && !input.mission && zoom < 0.03) input[world] -= dt * 0.085 * (1 - 0.7 * hubHover[world]);
+        hubGroup.rotation.set(0.1, input[world], 0);
+        continue;
+      }
       const active = displayed === world;
       handoff[world] = still ? Number(active) : damp(handoff[world], Number(active), 4.5, dt);
       const prominence = smoothstep(handoff[world], 0, 1);
@@ -380,10 +420,11 @@ export function mountScene(
     }
 
     if (input.mission) zoomedMission = input.mission;
-    const zoomTarget = Number(Boolean(input.mission));
+    const zoomTarget = input.mission ? input.zoomTo ?? 1 : 0;
     zoom = still ? 0 : damp(zoom, zoomTarget, 3, dt);
     if (Math.abs(zoomTarget - zoom) < 0.0001) zoom = zoomTarget;
-    groups[displayed].updateMatrixWorld(true);
+    if (input.hub) for (const world of ['moon', 'mars', 'space'] as const) groups[world].updateMatrixWorld(true);
+    else groups[displayed].updateMatrixWorld(true);
     // Points arrive late and slowly (about a second) once the globe is at rest, and leave quickly.
     const markersReady = handoff[displayed] > 0.9 && entryIn > 0.9 && arrival > 0.9 && departure < 0.06;
     markerIn = still ? Number(markersReady) : damp(markerIn, markersReady ? 1 : 0, markersReady ? 5.5 : 9, dt);
@@ -391,7 +432,7 @@ export function mountScene(
       const group = groups[world];
       const marker = markers[id];
       if (!marker) continue;
-      if (displayed !== world || input.destination !== world || input.mission || zoom >= 0.03) {
+      if (input.hub || displayed !== world || input.destination !== world || input.mission || zoom >= 0.03) {
         marker.hidden = true;
         continue;
       }
@@ -439,9 +480,17 @@ export function mountScene(
       const screenOffset = (1 - approach) / magnification;
       camera.position.x = site.x - startSite.x * screenOffset;
       camera.position.y = site.y - startSite.y * screenOffset;
+      // On the library entrance, a point marks the site the camera is closing in on.
+      const mark = input.hub ? markers[zoomedMission] : undefined;
+      if (mark) {
+        mark.hidden = false;
+        mark.style.opacity = String(smoothstep(approach, 0.1, 0.45));
+        mark.style.translate = `${width / 2 + (site.x - camera.position.x) * magnification}px ${height / 2 - (site.y - camera.position.y) * magnification}px`;
+      }
     } else {
       camera.position.x = 0;
       camera.position.y = 0;
+      if (input.hub) for (const mark of Object.values(markers)) mark.hidden = true;
     }
 
     const earth = groups.earth;

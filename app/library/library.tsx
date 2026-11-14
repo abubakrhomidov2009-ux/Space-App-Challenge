@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { flushSync } from 'react-dom';
 import LanguageSettings from '../museum/language-settings';
 import MissionContent from '../museum/mission-content';
 import RouteMap from '../museum/route-map';
@@ -13,9 +14,22 @@ import { missionIds, missions, type MissionId } from '../museum/missions';
 import { useLanguage } from '../museum/use-language';
 import { categories, categoryIds, type Category } from './categories';
 import { libraryCopy } from './labels';
+import MissionSearch from './mission-search';
+import LibraryHub, { type HubControls } from './library-hub';
+import { getFog, setFog } from './fog-store';
 import styles from './library.module.css';
 
 const kinds = ['rover', 'lander', 'combined', 'telescope'] as const;
+
+// Reorder the list as one smooth motion where the browser supports it; otherwise just update.
+function morph(update: () => void) {
+  const doc = document as Document & { startViewTransition?: (callback: () => void) => unknown };
+  if (!doc.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    update();
+    return;
+  }
+  doc.startViewTransition(() => flushSync(update));
+}
 
 function normalize(value: string) {
   return value.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
@@ -24,7 +38,19 @@ function normalize(value: string) {
 export default function Library({ mission, category }: { mission?: typeof missions[MissionId]; category?: Category }) {
   const { language, changeLanguage } = useLanguage();
   const [query, setQuery] = useState('');
+  const [search, setSearch] = useState('');
   const [kind, setKind] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const hub = useRef<HubControls | null>(null);
+  // Arriving from the entrance flight, the fog that covered the view now clears. It is the same
+  // fog element, kept in the layout, so there is no frame between closing and opening.
+  useLayoutEffect(() => {
+    const { state } = getFog();
+    if (state === 'idle') return;
+    if (state === 'close') setFog('open');
+    const timer = window.setTimeout(() => setFog('idle'), 1000);
+    return () => window.clearTimeout(timer);
+  }, []);
   const labels = libraryCopy[language];
   const copy = museumCopy[language];
 
@@ -33,14 +59,64 @@ export default function Library({ mission, category }: { mission?: typeof missio
   const extras = missionId ? missionExtras(missionId) : undefined;
 
   const categoryName = category === 'space' ? labels.space : category ? copy[category] : labels.title;
-  const searchTerm = normalize(query);
+  const searchTerm = normalize(search);
   const matches = missionIds.filter((id) => {
     const entry = missions[id];
     return category === entry.world && (!kind || kind === entry.kind)
       && Object.values(entry.copy).some(({ name }) => normalize(name).includes(searchTerm));
   });
 
+  // Typing settles for a moment before the list reorders, so it does not shuffle on every key.
+  useEffect(() => {
+    if (query === search) return;
+    const timer = window.setTimeout(() => morph(() => setSearch(query)), 160);
+    return () => window.clearTimeout(timer);
+  }, [query, search]);
+
+  // Ctrl+K, or / outside a text field, opens the quick search from any library page.
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const typing = target?.matches('input, textarea, select, [contenteditable]');
+      if ((event.key.toLowerCase() === 'k' && (event.ctrlKey || event.metaKey)) || (event.key === '/' && !typing)) {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const kindOptions = kinds.filter((value) => category === 'space' ? value === 'telescope' : value !== 'telescope');
+
+  if (!mission && !category) {
+    return (
+      <>
+        <MissionSearch language={language} open={searchOpen} onClose={() => setSearchOpen(false)}
+          onFly={(id) => hub.current?.flyTo(id)} />
+        <LibraryHub language={language} controls={hub} />
+        <header className={styles.header}>
+          <Link href="/"><i className="nav-arrow nav-arrow-left" aria-hidden="true" /> {labels.home}</Link>
+          <LanguageSettings language={language} onChange={changeLanguage} />
+        </header>
+        <div className={styles.hubTitle}>
+          <h1>{labels.title}</h1>
+          <button type="button" className={styles.quickSearch} onClick={() => setSearchOpen(true)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" />
+            </svg>
+            <span>{labels.search}</span>
+            <kbd>Ctrl K</kbd>
+          </button>
+        </div>
+      </>
+    );
+  }
+
   return (
+    <>
+    <div className={styles.sky} aria-hidden="true" />
+    <MissionSearch language={language} open={searchOpen} onClose={() => setSearchOpen(false)} />
     <main key={mission?.image ?? category ?? 'library'} className={styles.library}>
       <header className={styles.header}>
         <Link href={mission ? `/library/${mission.world}` : category ? '/library' : '/'}>
@@ -65,13 +141,24 @@ export default function Library({ mission, category }: { mission?: typeof missio
       ) : !category ? (
         <>
           <h1>{labels.title}</h1>
+          <button type="button" className={styles.quickSearch} onClick={() => setSearchOpen(true)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" />
+            </svg>
+            <span>{labels.search}</span>
+            <kbd>Ctrl K</kbd>
+          </button>
           <ul className={styles.categories}>
-            {categoryIds.map((id) => (
+            {categoryIds.map((id, index) => (
               <li key={id}>
-                <Link href={`/library/${id}`} className={styles.category} data-category={id}>
+                <Link href={`/library/${id}`} className={styles.category} data-category={id}
+                  style={{ '--i': index } as CSSProperties}>
                   <Image src={categories[id]} fill alt=""
                     sizes="(max-width: 740px) 95vw, 33vw" />
-                  <span>{id === 'space' ? labels.space : copy[id]} <i className="nav-arrow" aria-hidden="true" /></span>
+                  <span className={styles.categoryName}>
+                    <span>{id === 'space' ? labels.space : copy[id]}</span>
+                    <small>{missionIds.filter((mission) => missions[mission].world === id).length}</small>
+                  </span>
                 </Link>
               </li>
             ))}
@@ -81,24 +168,32 @@ export default function Library({ mission, category }: { mission?: typeof missio
         <>
           <h1>{categoryName}</h1>
           {category === 'space' && <p className={styles.description}>{labels.spaceDescription} · <a href="https://www.eso.org/public/images/eso1907a/">M87* · EHT Collaboration</a></p>}
-          <div className={styles.filters}>
-            <label>{labels.search}<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-            <label>{labels.type}<select value={kind} onChange={(event) => setKind(event.target.value)}>
-              <option value="">{labels.all}</option>
-              {kinds.filter((value) => category === 'space' ? value === 'telescope' : value !== 'telescope').map((value) => <option key={value} value={value}>{labels[value]}</option>)}
-            </select></label>
+          <div className={styles.bar} role="search">
+            <label className={styles.search}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" />
+              </svg>
+              <input type="search" value={query} placeholder={labels.search} aria-label={labels.search}
+                onChange={(event) => setQuery(event.target.value)} />
+            </label>
+            <div className={styles.kinds} role="group" aria-label={labels.type}>
+              {['', ...kindOptions].map((value) => (
+                <button key={value || 'all'} type="button" aria-pressed={kind === value}
+                  onClick={() => morph(() => setKind(value))}>{value ? labels[value as typeof kinds[number]] : labels.all}</button>
+              ))}
+            </div>
           </div>
-          <p className={styles.description} role="status">{matches.length ? `${labels.count} · ${matches.length}` : labels.empty}</p>
+          <p className={styles.count} role="status">{matches.length ? <>{labels.count} · <b>{matches.length}</b></> : labels.empty}</p>
           {matches.length === 0 && <button className={styles.reset} onClick={() => {
             setQuery('');
-            setKind('');
+            morph(() => { setSearch(''); setKind(''); });
           }}>{labels.reset}</button>}
           <ul className={styles.cards}>
-            {matches.map((id) => {
+            {matches.map((id, index) => {
               const entry = missions[id];
               const text = entry.copy[language];
               return (
-                <li key={id}>
+                <li key={id} className={styles.card} style={{ '--i': index, viewTransitionName: `mission-${id}` } as CSSProperties}>
                   <Link href={`/library/${id}`}>
                     <div className={styles.cover}>
                       <Image src={entry.image} alt="" fill sizes="(max-width: 560px) 95vw, (max-width: 900px) 45vw, 32vw" />
@@ -116,5 +211,6 @@ export default function Library({ mission, category }: { mission?: typeof missio
         </>
       )}
     </main>
+    </>
   );
 }
