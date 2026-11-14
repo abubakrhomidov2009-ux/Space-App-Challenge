@@ -12,7 +12,7 @@ import { categories, categoryIds, type Category } from './categories';
 import { libraryCopy } from './labels';
 import styles from './library.module.css';
 
-const kinds = ['rover', 'lander', 'combined'] as const;
+const kinds = ['rover', 'lander', 'combined', 'telescope'] as const;
 
 function normalize(value: string) {
   return value.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
@@ -34,10 +34,10 @@ export default function Library({ mission, category }: { mission?: typeof missio
   });
 
   return (
-    <main className={styles.library}>
+    <main key={mission?.image ?? category ?? 'library'} className={styles.library}>
       <header className={styles.header}>
         <Link href={mission ? `/library/${mission.world}` : category ? '/library' : '/'}>
-          <i className="nav-arrow nav-arrow-left" aria-hidden="true" /> {mission ? copy[mission.world] : category ? labels.title : labels.home}
+          <i className="nav-arrow nav-arrow-left" aria-hidden="true" /> {mission ? (mission.world === 'space' ? labels.space : copy[mission.world]) : category ? labels.title : labels.home}
         </Link>
         <LanguageSettings language={language} onChange={changeLanguage} />
       </header>
@@ -60,21 +60,15 @@ export default function Library({ mission, category }: { mission?: typeof missio
             ))}
           </ul>
         </>
-      ) : category === 'space' ? (
-        <>
-          <h1>{labels.space}</h1>
-          <p className={styles.description}>{labels.spaceDescription}</p>
-          <p>{labels.spaceEmpty}</p>
-          <a href="https://www.eso.org/public/images/eso1907a/">M87* · EHT Collaboration</a>
-        </>
       ) : (
         <>
           <h1>{categoryName}</h1>
+          {category === 'space' && <p className={styles.description}>{labels.spaceDescription} · <a href="https://www.eso.org/public/images/eso1907a/">M87* · EHT Collaboration</a></p>}
           <div className={styles.filters}>
             <label>{labels.search}<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
             <label>{labels.type}<select value={kind} onChange={(event) => setKind(event.target.value)}>
               <option value="">{labels.all}</option>
-              {kinds.map((value) => <option key={value} value={value}>{labels[value]}</option>)}
+              {kinds.filter((value) => category === 'space' ? value === 'telescope' : value !== 'telescope').map((value) => <option key={value} value={value}>{labels[value]}</option>)}
             </select></label>
           </div>
           <p className={styles.description} role="status">{matches.length ? `${labels.count} · ${matches.length}` : labels.empty}</p>

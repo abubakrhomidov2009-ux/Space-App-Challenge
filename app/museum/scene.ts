@@ -1,13 +1,14 @@
 import { missionIds, missions, type MissionId } from './missions';
 import * as THREE from 'three';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { disposeModel, normalizeModel } from './models';
 
-export type Destination = 'moon' | 'mars';
+export type Destination = 'moon' | 'mars' | 'space';
 type World = Destination | 'earth';
 type ModelStatus = 'loading' | 'ready' | 'error';
 export type SceneStatus = Record<World, ModelStatus>;
-export type SceneInput = { destination: Destination; moon: number; mars: number; dragging: boolean; resumeAt: number; mission: MissionId | null; missionCovered: boolean; switchDirection?: -1 | 1 };
+export type SceneInput = { destination: Destination; moon: number; mars: number; space: number; dragging: boolean; resumeAt: number; mission: MissionId | null; missionCovered: boolean; switchDirection?: -1 | 1 };
 
 const { lerp, smoothstep, damp } = THREE.MathUtils;
 
@@ -64,7 +65,7 @@ export function mountScene(
   const fill = new THREE.AmbientLight('#dde5fb', 0.14);
   scene.add(stars, key, rim, fill);
 
-  const groups = { moon: new THREE.Group(), mars: new THREE.Group(), earth: new THREE.Group() };
+  const groups = { moon: new THREE.Group(), mars: new THREE.Group(), earth: new THREE.Group(), space: new THREE.Group() };
   scene.add(...Object.values(groups));
 
   const atmosphere = new THREE.Mesh(
@@ -94,12 +95,14 @@ export function mountScene(
   const models: Partial<Record<World, THREE.Group>> = {};
   const loading = new Set<World>();
   const loader = new GLTFLoader();
+  const draco = new DRACOLoader().setDecoderPath('/draco/').setWorkerLimit(1);
+  const orbitAnchor = new THREE.Vector3(0.78, 0.18, 0.68);
   const requests = new AbortController();
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let disposed = false;
 
   async function load(world: World) {
-    const response = await fetch(`/models/${world}-1k.glb`, {
+    const response = await fetch(world === 'space' ? '/models/hubble.glb' : `/models/${world}-1k.glb`, {
       mode: 'cors',
       priority: 'high',
       signal: requests.signal,
@@ -107,6 +110,7 @@ export function mountScene(
     if (!response.ok) throw new Error(`Model request failed: ${response.status}`);
     const bytes = await response.arrayBuffer();
     if (disposed) return;
+    if (world === 'space') loader.setDRACOLoader(draco);
     const { scene: asset } = await loader.parseAsync(bytes, '/models/');
     if (disposed) {
       disposeModel(asset);
@@ -126,7 +130,16 @@ export function mountScene(
     }
 
     const normalized = normalizeModel(asset);
-    groups[world].add(normalized);
+    if (world === 'space') {
+      const telescope = new THREE.Group();
+      telescope.position.copy(orbitAnchor);
+      telescope.scale.setScalar(0.26);
+      telescope.rotation.set(0.32, -0.4, -0.28);
+      telescope.add(normalized);
+      groups.space.add(telescope);
+    } else {
+      groups[world].add(normalized);
+    }
     models[world] = normalized;
     onStatus(world, 'ready');
   }
@@ -168,11 +181,12 @@ export function mountScene(
   let ending = finaleTop / window.innerHeight;
   let displayed = input.destination;
   let slideDirection = 1;
-  const handoff = { moon: 0, mars: 0 };
+  const handoff = { moon: 0, mars: 0, space: 0 };
   let zoom = 0;
   let zoomedMission: MissionId = 'lunokhod';
   const sites = missionIds.map((id) => {
     const mission = missions[id];
+    if (mission.world === 'space') return { id, world: mission.world, point: orbitAnchor };
     const latitude = THREE.MathUtils.degToRad(mission.latitude);
     // The Mars GLB puts the centre of its map 72° west of the model's +Z axis.
     const longitude = THREE.MathUtils.degToRad(mission.longitude - (mission.world === 'mars' ? 72 : 0));
@@ -200,6 +214,7 @@ export function mountScene(
     if (input.missionCovered) return;
 
     ensure(input.destination);
+    if (standalone && input.destination === 'space') ensure('earth');
     if (!standalone && models.moon && exploreTop < height * 0.6) ensure('mars');
     if (finaleTop < height * 1.1) ensure('earth');
 
@@ -220,14 +235,14 @@ export function mountScene(
     const radius = Math.min(width * 0.49, height * 0.48);
     const horizonRadius = Math.max(width * 0.66, height * 0.59);
 
-    for (const world of ['moon', 'mars'] as const) {
+    for (const world of ['moon', 'mars', 'space'] as const) {
       const active = displayed === world;
       handoff[world] = still ? Number(active) : damp(handoff[world], Number(active), 4.5, dt);
       const prominence = smoothstep(handoff[world], 0, 1);
       const group = groups[world];
       const risingRadius = lerp(horizonRadius, radius, arrival);
       group.visible = prominence > 0.001 && arrival > 0.001 && departure < 0.999 && (!still || departure === 0);
-      group.scale.setScalar(risingRadius * lerp(0.53, 1, prominence) * lerp(1, 0.18, departure));
+      group.scale.setScalar(risingRadius * (world === 'space' ? 0.77 : 1) * lerp(0.53, 1, prominence) * lerp(1, 0.18, departure));
       group.position.set(
         width * (1 - prominence) * (active ? 0.75 : -0.29) * slideDirection,
         -(risingRadius + height * 0.46) * (1 - arrival) + height * departure * 0.26,
@@ -254,7 +269,7 @@ export function mountScene(
       if (!marker) continue;
       marker.hidden = !(models[world] && group.visible && displayed === world
         && input.destination === world && arrival > 0.95 && departure < 0.06
-        && site.z - globeCenter.z > group.scale.x * 0.2 && !input.mission && zoom < 0.03);
+        && (world === 'space' ? site.z > globeCenter.z || Math.hypot(site.x - globeCenter.x, site.y - globeCenter.y) > group.scale.x * 0.69 : site.z - globeCenter.z > group.scale.x * 0.2) && !input.mission && zoom < 0.03);
       if (!marker.hidden) {
         marker.style.left = `${width / 2 + site.x}px`;
         marker.style.top = `${height / 2 - site.y}px`;
@@ -294,6 +309,12 @@ export function mountScene(
     earth.scale.setScalar(earthRadius);
     earth.position.set(0, -earthRadius - height * lerp(0.51, -0.05, earthArrival), lerp(-840, -90, earthArrival));
     earth.rotation.set(0.22, still ? 0.7 : 0.7 + 0.22 * earthArrival, -0.24);
+    if (standalone && groups.space.visible && models.earth) {
+      earth.visible = true;
+      earth.scale.setScalar(groups.space.scale.x * 0.68);
+      earth.position.copy(groups.space.position);
+      earth.rotation.set(0.14, input.space, -0.24);
+    }
     stars.position.y = still ? 0 : 95 * arrival + 140 * departure;
     stars.material.opacity = lerp(1, 0.48, earthArrival);
     stars.material.transparent = true;
@@ -303,6 +324,7 @@ export function mountScene(
   return () => {
     disposed = true;
     requests.abort();
+    draco.dispose();
     window.removeEventListener('scroll', measureScroll);
     window.removeEventListener('resize', measureScroll);
     resize.disconnect();

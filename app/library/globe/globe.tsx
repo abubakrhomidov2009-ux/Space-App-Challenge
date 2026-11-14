@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import MissionDialog from '../../museum/mission-dialog';
+import { useMissionDialog } from '../../museum/use-mission-dialog';
 import { useEffect, useRef, useState } from 'react';
 import LanguageSettings from '../../museum/language-settings';
 import { museumCopy } from '../../museum/languages';
@@ -12,20 +13,23 @@ import museumStyles from '../../museum/museum.module.css';
 import { libraryCopy } from '../labels';
 import styles from '../library.module.css';
 
+const destinations = ['moon', 'mars', 'space'] as const;
+
 export default function Globe({ initialWorld }: { initialWorld: Destination }) {
   const { language, changeLanguage } = useLanguage();
   const labels = libraryCopy[language];
   const copy = museumCopy[language];
-  const router = useRouter();
   const [world, setWorld] = useState(initialWorld);
-  const [status, setStatus] = useState<SceneStatus>({ moon: 'loading', mars: 'loading', earth: 'loading' });
+  const [status, setStatus] = useState<SceneStatus>({ moon: 'loading', mars: 'loading', earth: 'loading', space: 'loading' });
   const [unavailable, setUnavailable] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const markers = useRef<Partial<Record<MissionId, HTMLButtonElement>>>({});
   const input = useRef<SceneInput>({
-    destination: initialWorld, moon: 0, mars: Math.PI * .43,
+    destination: initialWorld, moon: 0, mars: Math.PI * .43, space: 0,
     dragging: false, resumeAt: 0, mission: null, missionCovered: false,
   });
+  const rotation = useRef<HTMLDivElement>(null);
+  const { openMission, dialogProps } = useMissionDialog(input, rotation);
   const drag = useRef<{ id: number; x: number } | null>(null);
 
   useEffect(() => {
@@ -54,13 +58,17 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
     input.current.resumeAt = performance.now() + 3000;
   }
 
-  const next = world === 'moon' ? 'mars' : 'moon';
+  const names = { moon: copy.moon, mars: copy.mars, space: labels.space };
+  const index = destinations.indexOf(world);
+  const previous = destinations[(index + destinations.length - 1) % destinations.length];
+  const next = destinations[(index + 1) % destinations.length];
 
   function switchWorld(direction: -1 | 1) {
+    const target = direction === 1 ? next : previous;
     input.current.switchDirection = direction;
-    input.current.destination = next;
-    setWorld(next);
-    window.history.replaceState(null, '', `/library/globe?world=${next}`);
+    input.current.destination = target;
+    setWorld(target);
+    window.history.replaceState(null, '', `/library/globe?world=${target}`);
   }
 
   return (
@@ -69,9 +77,10 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
         <Link href="/"><i className="nav-arrow nav-arrow-left" aria-hidden="true" /> {labels.home}</Link>
         <LanguageSettings language={language} onChange={changeLanguage} />
       </header>
+      <MissionDialog {...dialogProps} language={language} onLanguageChange={changeLanguage} />
       <div className={styles.globe}>
         <div ref={host} className={styles.globeCanvas} aria-hidden="true" />
-        <div className={styles.globeDrag} tabIndex={0} role="group" aria-label={copy[world]}
+        <div ref={rotation} className={styles.globeDrag} tabIndex={0} role="group" aria-label={names[world]}
           aria-description={labels.drag}
           onKeyDown={(event) => {
             if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
@@ -101,21 +110,21 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
           }} hidden
             className={`${museumStyles.marker} ${styles.globeMarker}`}
             aria-label={missions[id].copy[language].name}
-            onClick={() => router.push(`/library/${id}`)}>
+            onClick={() => openMission(id)}>
             <span className={museumStyles.markerCore} aria-hidden="true" />
             <span className={museumStyles.markerName} aria-hidden="true">{missions[id].copy[language].name}</span>
           </button>
         ))}
         <button className={`${museumStyles.next} ${styles.previousWorld}`}
-          aria-label={`← ${copy.show} · ${copy[next]}`} onClick={() => switchWorld(-1)}>
+          aria-label={`← ${copy.show} · ${names[previous]}`} onClick={() => switchWorld(-1)}>
           <span><i className="nav-arrow nav-arrow-left" aria-hidden="true" /></span>
         </button>
         <button className={`${museumStyles.next} ${styles.nextWorld}`}
-          aria-label={`→ ${copy.show} · ${copy[next]}`} onClick={() => switchWorld(1)}>
+          aria-label={`→ ${copy.show} · ${names[next]}`} onClick={() => switchWorld(1)}>
           <span><i className="nav-arrow" aria-hidden="true" /></span>
         </button>
         <p className={styles.globeStatus} role="status">
-          {unavailable ? copy.unavailable : status[world] === 'error' ? copy.error : status[world] === 'loading' ? copy.loading : copy[world]}
+          {unavailable ? copy.unavailable : status[world] === 'error' ? copy.error : status[world] === 'loading' ? copy.loading : world === 'space' ? labels.orbitScale : names[world]}
         </p>
       </div>
     </main>

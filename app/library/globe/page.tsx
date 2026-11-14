@@ -7,5 +7,5 @@ export default async function GlobePage({ searchParams }: {
   searchParams: Promise<{ world?: string }>;
 }) {
   const { world } = await searchParams;
-  return <Globe initialWorld={world === 'mars' ? 'mars' : 'moon'} />;
+  return <Globe initialWorld={world === 'mars' || world === 'space' ? world : 'moon'} />;
 }

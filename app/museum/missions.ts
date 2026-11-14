@@ -1,3 +1,4 @@
+import { hubble } from './hubble';
 import { additionalMissions } from './additional-missions';
 import { lunokhod } from './lunokhod';
 
@@ -5,6 +6,7 @@ const marsCoordinates = 'https://www-robotics.jpl.nasa.gov/media/documents/05per
 
 export const missions = {
   ...additionalMissions,
+  hubble,
   lunokhod: { kind: 'rover', ...lunokhod, world: 'moon', image: '/lunokhod-1.webp', imageKind: 'model', siteKind: 'position' },
   apollo: { kind: 'lander',
     world: 'moon', latitude: 0.67409, longitude: 23.47298,

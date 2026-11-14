@@ -174,3 +174,14 @@
     transform: none;
   }
 }
+
+.globePage { --gutter: clamp(1rem, 5vw, 4rem); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .library { animation: libraryEnter 250ms ease-out both; }
+}
+
+@keyframes libraryEnter {
+  from { opacity: .25; }
+  to { opacity: 1; }
+}

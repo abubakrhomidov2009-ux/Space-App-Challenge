@@ -8,6 +8,7 @@ import { preload } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
 import type { Destination, SceneInput, SceneStatus } from './scene';
 import MobileMenu from './mobile-menu';
+import { useMissionDialog } from './use-mission-dialog';
 import MissionDialog from './mission-dialog';
 import LanguageSettings from './language-settings';
 import { museumCopy } from './languages';
@@ -16,20 +17,15 @@ import styles from './museum.module.css';
 
 export default function Museum() {
   const markers = useRef<Partial<Record<MissionId, HTMLButtonElement>>>({});
-  const [selectedMission, setSelectedMission] = useState<MissionId>('lunokhod');
-  const dialog = useRef<HTMLDialogElement>(null);
   const rotation = useRef<HTMLDivElement>(null);
-  const [photoReady, setPhotoReady] = useState(false);
-  const [photoFailed, setPhotoFailed] = useState(false);
-  const photoRequest = useRef<AbortController | null>(null);
-  const [closing, setClosing] = useState(false);
   const sky = useRef<HTMLDivElement>(null);
   const explore = useRef<HTMLElement>(null);
   const finale = useRef<HTMLElement>(null);
-  const input = useRef<SceneInput>({ destination: 'moon', moon: 0, mars: Math.PI * 0.43, dragging: false, resumeAt: 0, mission: null, missionCovered: false });
+  const input = useRef<SceneInput>({ destination: 'moon', moon: 0, mars: Math.PI * 0.43, space: 0, dragging: false, resumeAt: 0, mission: null, missionCovered: false });
+  const { openMission, dialogProps } = useMissionDialog(input, rotation);
   const drag = useRef<{ id: number; x: number } | null>(null);
-  const [destination, setDestination] = useState<Destination>('moon');
-  const [status, setStatus] = useState<SceneStatus>({ moon: 'loading', mars: 'loading', earth: 'loading' });
+  const [destination, setDestination] = useState<Exclude<Destination, 'space'>>('moon');
+  const [status, setStatus] = useState<SceneStatus>({ moon: 'loading', mars: 'loading', earth: 'loading', space: 'loading' });
   const [unavailable, setUnavailable] = useState(false);
   const { language, changeLanguage } = useLanguage();
   const copy = museumCopy[language];
@@ -55,7 +51,6 @@ export default function Museum() {
     return () => {
       cancelled = true;
       cleanup?.();
-      photoRequest.current?.abort();
     };
   }, []);
 
@@ -70,53 +65,6 @@ export default function Museum() {
       if (mission.world === destination) preload(mission.image, { as: 'image', fetchPriority: 'low' });
     }
   }, [destination, status]);
-
-  function openMission(id: MissionId) {
-    if (!dialog.current || dialog.current.open) return;
-    const request = new AbortController();
-    photoRequest.current = request;
-    setSelectedMission(id);
-    setPhotoReady(false);
-    setPhotoFailed(false);
-    const photo = new window.Image();
-    photo.src = missions[id].image;
-    const timeout = window.setTimeout(() => reveal(false), 8000);
-
-    function reveal(loaded: boolean) {
-      window.clearTimeout(timeout);
-      if (request.signal.aborted) return;
-      request.abort();
-      setPhotoFailed(!loaded);
-      setPhotoReady(true);
-    }
-
-    request.signal.addEventListener('abort', () => window.clearTimeout(timeout), { once: true });
-    void photo.decode().then(() => reveal(true), () => reveal(false));
-    input.current.mission = id;
-    dialog.current.showModal();
-  }
-
-  function finishMission() {
-    input.current.missionCovered = false;
-    input.current.mission = null;
-    input.current.resumeAt = performance.now() + 3000;
-    dialog.current?.close();
-    setClosing(false);
-    rotation.current?.focus({ preventScroll: true });
-  }
-
-  function closeMission() {
-    if (closing) return;
-    photoRequest.current?.abort();
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      finishMission();
-      return;
-    }
-    input.current.missionCovered = false;
-    input.current.mission = null;
-    input.current.resumeAt = performance.now() + 3000;
-    setClosing(true);
-  }
 
   const message = unavailable
     ? copy.unavailable
@@ -134,8 +82,8 @@ export default function Museum() {
         <MobileMenu language={language} />
         <LanguageSettings language={language} onChange={changeLanguage} />
       </header>
-      <MissionDialog photoReady={photoReady} photoFailed={photoFailed} mission={missions[selectedMission]} language={language} onLanguageChange={changeLanguage} dialog={dialog} closing={closing} onClose={closeMission} onReveal={() => { input.current.missionCovered = true; }} onExit={finishMission} />
-      {missionIds.map((id) => {
+      <MissionDialog {...dialogProps} language={language} onLanguageChange={changeLanguage} />
+      {missionIds.filter((id) => missions[id].world !== 'space').map((id) => {
         const name = missions[id].copy[language].name;
         return (
           <button key={id} ref={(element) => {
