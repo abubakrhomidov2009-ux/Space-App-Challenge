@@ -76,6 +76,7 @@
   backdrop-filter: var(--glass-blur);
 }
 
+.standing { margin-bottom: 1.3rem; padding-bottom: 1.3rem; font-size: 1.05rem; }
 .facts dl { display: grid; gap: 1.1rem; margin: 0; }
 .facts dt { color: #a7a7ae; font-size: .85rem; }
 .facts dd { margin: .15rem 0 0; font-size: 1.05rem; font-variant-numeric: tabular-nums; }

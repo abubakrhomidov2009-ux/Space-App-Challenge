@@ -15,6 +15,7 @@ import { categories, categoryIds, type Category } from './categories';
 import { libraryCopy } from './labels';
 import MissionSearch from './mission-search';
 import Dossier from './dossier';
+import TimelineList from './timeline-list';
 import LibraryHub, { type HubControls } from './library-hub';
 import { getFog, setFog } from './fog-store';
 import styles from './library.module.css';
@@ -22,14 +23,22 @@ import styles from './library.module.css';
 const kinds = ['rover', 'lander', 'combined', 'telescope'] as const;
 
 // Reorder the list as one smooth motion where the browser supports it; otherwise just update.
-function morph(update: () => void) {
+// Only the grid is reordered this way: the timeline's cards are large, and snapshotting them all
+// at once makes the page stutter, so there the list is simply replaced and its cards ease in.
+function morph(update: () => void, animate = true) {
   const doc = document as Document & { startViewTransition?: (callback: () => void) => unknown };
-  if (!doc.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (!animate || !doc.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     update();
     return;
   }
   doc.startViewTransition(() => flushSync(update));
 }
+
+const views = {
+  ru: { label: 'Вид', timeline: 'Лента', grid: 'Сетка' },
+  en: { label: 'View', timeline: 'Timeline', grid: 'Grid' },
+  tg: { label: 'Намуд', timeline: 'Лента', grid: 'Тӯр' },
+} as const;
 
 function normalize(value: string) {
   return value.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
@@ -40,6 +49,7 @@ export default function Library({ mission, category }: { mission?: typeof missio
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState('');
   const [kind, setKind] = useState('');
+  const [view, setView] = useState<'timeline' | 'grid'>('timeline');
   const [searchOpen, setSearchOpen] = useState(false);
   const hub = useRef<HubControls | null>(null);
   // Arriving from the entrance flight, the fog that covered the view now clears. It is the same
@@ -69,9 +79,9 @@ export default function Library({ mission, category }: { mission?: typeof missio
   // Typing settles for a moment before the list reorders, so it does not shuffle on every key.
   useEffect(() => {
     if (query === search) return;
-    const timer = window.setTimeout(() => morph(() => setSearch(query)), 160);
+    const timer = window.setTimeout(() => morph(() => setSearch(query), view === 'grid'), 160);
     return () => window.clearTimeout(timer);
-  }, [query, search]);
+  }, [query, search, view]);
 
   // Ctrl+K, or / outside a text field, opens the quick search from any library page.
   useEffect(() => {
@@ -177,16 +187,23 @@ export default function Library({ mission, category }: { mission?: typeof missio
             <div className={styles.kinds} role="group" aria-label={labels.type}>
               {['', ...kindOptions].map((value) => (
                 <button key={value || 'all'} type="button" aria-pressed={kind === value}
-                  onClick={() => morph(() => setKind(value))}>{value ? labels[value as typeof kinds[number]] : labels.all}</button>
+                  onClick={() => morph(() => setKind(value), view === 'grid')}>{value ? labels[value as typeof kinds[number]] : labels.all}</button>
+              ))}
+            </div>
+            <div className={styles.kinds} role="group" aria-label={views[language].label}>
+              {(['timeline', 'grid'] as const).map((value) => (
+                <button key={value} type="button" aria-pressed={view === value}
+                  onClick={() => setView(value)}>{views[language][value]}</button>
               ))}
             </div>
           </div>
           <p className={styles.count} role="status">{matches.length ? <>{labels.count} · <b>{matches.length}</b></> : labels.empty}</p>
           {matches.length === 0 && <button className={styles.reset} onClick={() => {
             setQuery('');
-            morph(() => { setSearch(''); setKind(''); });
+            morph(() => { setSearch(''); setKind(''); }, view === 'grid');
           }}>{labels.reset}</button>}
-          <ul className={styles.cards}>
+          {view === 'timeline' ? <TimelineList key="timeline" ids={matches} language={language} /> : (
+          <ul key="grid" className={styles.cards}>
             {matches.map((id, index) => {
               const entry = missions[id];
               const text = entry.copy[language];
@@ -206,6 +223,7 @@ export default function Library({ mission, category }: { mission?: typeof missio
               );
             })}
           </ul>
+          )}
         </>
       )}
     </main>

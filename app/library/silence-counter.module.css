@@ -1,0 +1,5 @@
+.counter { display: grid; gap: .15rem; }
+.label { color: #a7a7ae; font-size: .85rem; }
+.value { font-variant-numeric: tabular-nums; min-height: 1.4em; color: #e6e6ea; }
+.value b { font-weight: 600; font-size: 1.15em; color: #fff; }
+.clock { margin-left: .4em; color: #a7a7ae; letter-spacing: .03em; }

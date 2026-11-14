@@ -1,0 +1,98 @@
+.line {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One thin axis of time down the page. It is the only line here and it carries information. */
+.line::before {
+  content: '';
+  position: absolute;
+  top: .6rem;
+  bottom: .6rem;
+  left: 6.85rem;
+  width: 1px;
+  background: rgb(255 255 255 / .22);
+}
+
+.item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: 0 2rem;
+  margin-top: var(--gap, 1.2rem);
+  animation: cardIn .8s cubic-bezier(.2, .7, .2, 1) both;
+}
+
+.item::before {
+  content: '';
+  position: absolute;
+  top: 1.15rem;
+  left: 6.85rem;
+  width: .6rem;
+  height: .6rem;
+  border-radius: 50%;
+  background: #fff;
+  translate: -50% 0;
+}
+
+.item:first-child { margin-top: 0; }
+
+.year {
+  padding-top: .55rem;
+  color: #cfcfd5;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: minmax(9rem, 14rem) minmax(0, 1fr);
+  overflow: hidden;
+  border-radius: 1.2rem;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  text-decoration: none;
+  transition: background .4s ease;
+}
+
+.card:hover { background: var(--glass-hover); }
+.card:focus-visible { outline: 2px solid rgb(255 255 255 / .6); outline-offset: 3px; }
+
+.cover { position: relative; min-height: 9rem; overflow: hidden; }
+.cover img { object-fit: cover; filter: saturate(.8) brightness(.82); transition: transform 1.1s cubic-bezier(.2, .7, .2, 1), filter .6s ease; }
+.card:hover .cover img { transform: scale(1.05); filter: saturate(.95) brightness(1); }
+
+.copy { display: grid; align-content: start; gap: .35rem; padding: 1.1rem 1.3rem 1.2rem; }
+.copy small { color: #a7a7ae; font-size: .82rem; }
+.copy strong { font-size: 1.45rem; line-height: 1.13; }
+.intro { color: #bcbcc2; }
+.copy > :last-child { margin-top: .5rem; }
+
+@keyframes cardIn { from { opacity: 0; transform: translateY(18px); } }
+
+@supports (animation-timeline: view()) {
+  .item { animation: cardScroll linear both; animation-timeline: view(); animation-range: entry 0% entry 55%; }
+}
+
+@keyframes cardScroll {
+  from { opacity: 0; transform: translateY(26px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 700px) {
+  .line::before { left: .3rem; }
+  .item { grid-template-columns: minmax(0, 1fr); padding-left: 1.4rem; gap: .35rem 0; }
+  .item::before { left: .3rem; top: .6rem; }
+  .year { text-align: left; padding-top: 0; font-size: 1.1rem; }
+  .card { grid-template-columns: minmax(0, 1fr); }
+  .cover { min-height: 10rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item { animation: none; }
+  .cover img { transition: none; }
+}

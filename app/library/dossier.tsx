@@ -5,6 +5,7 @@ import { museumCopy, type Language } from '../museum/languages';
 import { missionIds, missions, type MissionId } from '../museum/missions';
 import SourceLink from '../museum/source-link';
 import { libraryCopy } from './labels';
+import SilenceCounter from './silence-counter';
 import styles from './dossier.module.css';
 
 const words = {
@@ -55,6 +56,7 @@ export default function Dossier({ id, language, children }: { id: MissionId; lan
           {text.story.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
         </div>
         <aside className={styles.facts} aria-label={word.kind}>
+          <div className={styles.standing}><SilenceCounter id={id} language={language} /></div>
           <dl>
             <div><dt>{word.world}</dt><dd>{worldName}</dd></div>
             <div><dt>{word.kind}</dt><dd>{library[mission.kind]}</dd></div>
