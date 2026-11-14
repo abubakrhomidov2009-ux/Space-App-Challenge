@@ -195,11 +195,17 @@ export default function Museum() {
               input.current.resumeAt = performance.now() + 3000;
             }}
           />
-          <button className={styles.next} onClick={() => {
+          <button className={styles.next} data-next={nextDestination} onClick={() => {
             input.current.destination = nextDestination;
             setDestination(nextDestination);
           }} aria-label={`${copy.show} · ${copy[nextDestination]}`}>
-            <span aria-hidden="true">→</span>
+            <span key={nextDestination} className={styles.nextDisc} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25"
+                strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12h15M13.5 6.5 19 12l-5.5 5.5" />
+              </svg>
+            </span>
+            <span className={styles.nextName} aria-hidden="true">{copy[nextDestination]}</span>
           </button>
           <p className={styles.hint} role="status">{message}</p>
         </div>

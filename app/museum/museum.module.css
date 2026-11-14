@@ -87,9 +87,10 @@
 .rotation:active { cursor: grabbing; }
 
 .next {
+  --size: 4rem;
   display: grid;
   justify-items: center;
-  gap: .4rem;
+  gap: .85rem;
   position: absolute;
   right: clamp(1rem, 3vw, 3rem);
   top: 50%;
@@ -100,18 +101,95 @@
   color: var(--foreground);
 }
 
-.next span {
-  display: grid;
-  width: 3.25rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border: 1px solid #85858d;
-  border-radius: 50%;
-  background: #09090dcc;
-  font-size: 1.45rem;
+/* The button is a small copy of the world it leads to. */
+.next[data-next='moon'] {
+  --land: #9fa2ab;
+  --map: url('/planets/moon.webp');
+  --turn-from: 52%;
+  --turn-to: 17%;
+  --halo: #b3c0dc4d;
 }
 
-.next:hover span { background: #f4f4f5; color: #070709; }
+.next[data-next='mars'] {
+  --land: #a8512f;
+  --map: url('/planets/mars.webp');
+  --turn-from: 18%;
+  --turn-to: 58%;
+  --halo: #e8834e59;
+}
+
+.nextDisc {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  width: var(--size);
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--land);
+  color: #07080c;
+  box-shadow: 0 18px 44px #000d, 0 0 0 0 var(--halo);
+  transition: transform .9s cubic-bezier(.2, .7, .2, 1), box-shadow .9s cubic-bezier(.2, .7, .2, 1);
+  animation: worldArrive 1s cubic-bezier(.2, .7, .2, 1) backwards;
+}
+
+/* Surface: the real equator band of the world, three disc-widths long. */
+.nextDisc::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--map) var(--turn-from) 50% / auto 100% repeat-x;
+  transition: background-position 3.6s cubic-bezier(.2, .6, .2, 1);
+}
+
+/* Sunlight from the upper left; the far edge falls into shadow. */
+.nextDisc::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, transparent 0 26%, #05060a4d 54%, #05060a99 76%, #05060af2 100%);
+}
+
+.nextDisc svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  stroke-width: 1.7;
+  transition: transform .7s cubic-bezier(.2, .7, .2, 1);
+}
+
+.nextName {
+  color: #c9cbd3;
+  font-size: .8125rem;
+  letter-spacing: .02em;
+  text-shadow: 0 1px 10px #000;
+  transition: color .5s ease;
+}
+
+.next:hover .nextDisc,
+.next:focus-visible .nextDisc {
+  transform: scale(1.07);
+  box-shadow: 0 24px 54px #000e, 0 0 48px 2px var(--halo);
+}
+
+.next:hover .nextDisc::before,
+.next:focus-visible .nextDisc::before { background-position: var(--turn-to) 50%; }
+
+.next:hover .nextDisc svg,
+.next:focus-visible .nextDisc svg { transform: translateX(4px); }
+
+.next:hover .nextName,
+.next:focus-visible .nextName { color: white; }
+
+.next:active .nextDisc { transform: scale(.96); transition-duration: .2s; }
+
+@keyframes worldArrive {
+  from { opacity: 0; transform: translateX(18px) scale(.7); }
+  to { opacity: 1; transform: none; }
+}
 
 .hint {
   position: absolute;
@@ -185,17 +263,17 @@
   pointer-events: none;
 }
 
+/* Outer halo is pure light, with no ring around it. */
 .marker::before {
-  inset: 4px;
-  border: 1px solid #ffffff50;
-  background: radial-gradient(circle, #ffffff28, transparent 72%);
+  inset: 0;
+  background: radial-gradient(circle, #ffffff3d, #ffffff12 45%, transparent 70%);
   animation: markerPulse 2.5s ease-in-out infinite;
 }
 
 .marker::after {
-  inset: 15px;
-  border: 1px solid #ffffffc0;
-  box-shadow: 0 0 10px #ffffff42;
+  inset: 16px;
+  border: 1px solid #ffffffb8;
+  box-shadow: 0 0 12px #ffffff3d;
 }
 
 .markerCore {
@@ -209,12 +287,11 @@
 .markerName {
   position: absolute;
   left: calc(100% + .25rem);
-  padding: .32rem .58rem;
+  padding: .4rem .75rem;
   color: white;
-  background: #1011169c;
-  border: 1px solid #ffffff20;
-  border-radius: .45rem;
-  backdrop-filter: blur(8px);
+  background: #0d0f15;
+  border-radius: .55rem;
+  box-shadow: 0 10px 28px #0009;
   font-size: .875rem;
   white-space: nowrap;
   opacity: 0;
@@ -267,13 +344,16 @@
   position: fixed;
   z-index: 2;
   inset: 1.25rem auto auto max(.5rem, env(safe-area-inset-left));
-  padding: .65rem .95rem;
-  border: 1px solid #ffffff30;
+  padding: .7rem 1.1rem;
+  border: 0;
   border-radius: 999px;
-  background: #10121873;
-  backdrop-filter: blur(12px);
+  background: #13161e;
+  box-shadow: 0 10px 30px #0008;
   color: white;
+  transition: background .3s ease;
 }
+
+.missionBack:hover { background: #1d212c; }
 
 .missionPhoto {
   position: relative;
@@ -422,7 +502,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .markerName { transition: none; }
+  .markerName, .nextDisc, .nextDisc::before, .nextDisc svg, .nextName { transition: none; }
+  .nextDisc, .languageSettings[open] .languageMenu { animation: none; }
+  .next:hover .nextDisc, .next:focus-visible .nextDisc { transform: none; }
+  .next:hover .nextDisc svg, .next:focus-visible .nextDisc svg { transform: none; }
   .marker::before, .mission[open] .missionPanel, .mission[open] .missionFog,
   .mission[open] .missionFog::before, .mission[open] .missionFog::after { animation: none; }
 }
@@ -440,9 +523,11 @@
   width: 2.75rem;
   height: 2.75rem;
   margin-left: auto;
-  border: 1px solid #ffffff30;
+  border: 0;
   border-radius: 50%;
-  background: #101218a8;
+  background: #13161e;
+  box-shadow: 0 10px 30px #0008;
+  transition: background .3s ease;
   color: white;
   font: 1.45rem/1 system-ui, sans-serif;
   cursor: pointer;
@@ -457,13 +542,21 @@
   display: grid;
   gap: .2rem;
   min-width: 11rem;
-  padding: .75rem;
-  border: 1px solid #ffffff30;
-  border-radius: .6rem;
-  background: #151820ed;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 10px 32px #0006;
+  padding: .6rem;
+  border-radius: .9rem;
+  background: #12141b;
+  box-shadow: 0 24px 60px #000a;
   color: white;
+}
+
+.languageSettings[open] .languageMenu {
+  transform-origin: top right;
+  animation: menuIn .32s cubic-bezier(.2, .7, .2, 1);
+}
+
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-8px) scale(.96); }
+  to { opacity: 1; transform: none; }
 }
 
 .languageMenu p {
@@ -482,24 +575,19 @@
   text-align: left;
   color: #eef0f6;
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: .4rem;
+  border: 0;
+  border-radius: .55rem;
+  transition: background .2s ease;
 }
 
-.languageMenu button:hover { background: #ffffff10; }
+.languageMenu button:hover { background: #ffffff0f; }
 
-.languageMenu button[aria-pressed='true'] {
-  background: #b8cfef1a;
-  border-color: #b8cfef38;
-}
+.languageMenu button[aria-pressed='true'] { background: #b8cfef1f; }
 
 .languageMenu button span { color: #c4d9fa; }
 
 .languageSettings summary:hover,
-.languageSettings[open] summary {
-  background: #202735;
-  border-color: #b8cfef60;
-}
+.languageSettings[open] summary { background: #1d212c; }
 
 .missionPanel .languageSettings { z-index: 2; }
 
