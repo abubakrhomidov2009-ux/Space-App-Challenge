@@ -31,7 +31,6 @@ export default function LibraryHub({ language, controls }: { language: Language;
   const [busy, setBusy] = useState<{ world: HubWorld; mission?: MissionId } | null>(null);
   const points = useRef<Partial<Record<MissionId, HTMLButtonElement>>>({});
   const timers = useRef<number[]>([]);
-  const pending = useRef<MissionId | null>(null);
   const labels = libraryCopy[language];
   const copy = museumCopy[language];
 
@@ -51,7 +50,9 @@ export default function LibraryHub({ language, controls }: { language: Language;
       cleanup = mountScene(sky, null, null, input.current, points.current, (world, phase) => {
         setStatus((previous) => ({ ...previous, [world]: phase }));
       });
-    }).catch(() => undefined);
+    }).catch((error: unknown) => {
+      if (!cancelled) console.error('[TMAS] Could not start the library 3D scene', error);
+    });
 
     return () => {
       cancelled = true;
@@ -70,11 +71,11 @@ export default function LibraryHub({ language, controls }: { language: Language;
   function openWorld(world: HubWorld) {
     if (busy) return;
     const href = `/library/${world}`;
-    router.prefetch(href);
-    if (reducedMotion()) {
+    if (status[world] !== 'ready' || reducedMotion()) {
       router.push(href);
       return;
     }
+    router.prefetch(href);
     input.current.focus = world;
     input.current.hover = null;
     setBusy({ world });
@@ -85,11 +86,11 @@ export default function LibraryHub({ language, controls }: { language: Language;
   const flyTo = useCallback((id: MissionId) => {
     const world = missions[id].world as HubWorld;
     const href = `/library/${id}`;
-    router.prefetch(href);
-    if (reducedMotion()) {
+    if (status[world] !== 'ready' || reducedMotion()) {
       router.push(href);
       return;
     }
+    router.prefetch(href);
     input.current.hover = null;
     setBusy({ world, mission: id });
     // The world comes forward, the camera starts to close in on the site, and before the models'
@@ -102,28 +103,12 @@ export default function LibraryHub({ language, controls }: { language: Language;
     }
     later(() => setFog('close', world), 1150);
     later(() => router.push(href), 1850);
-  }, [router, later]);
+  }, [router, later, status]);
 
   useEffect(() => {
-    controls.current = { flyTo: (id) => {
-      const world = missions[id].world;
-      // Wait for that world's model, so the flight never starts on an empty sky.
-      if (status[world] !== 'ready') {
-        pending.current = id;
-        return;
-      }
-      flyTo(id);
-    } };
+    controls.current = { flyTo };
     return () => { controls.current = null; };
-  }, [controls, flyTo, status]);
-
-  useEffect(() => {
-    const id = pending.current;
-    if (id && status[missions[id].world] === 'ready') {
-      pending.current = null;
-      flyTo(id);
-    }
-  }, [status, flyTo]);
+  }, [controls, flyTo]);
 
   const stacked = isStackedHub(size.width, size.height);
   const layout = size.width ? hubLayout(size.width, size.height) : null;
@@ -136,9 +121,8 @@ export default function LibraryHub({ language, controls }: { language: Language;
         const reach = slot.r * (world === 'space' ? 1.15 : 1);
         const name = world === 'space' ? labels.space : copy[world];
         const count = missionIds.filter((id) => missions[id].world === world).length;
-        const ready = status.moon === 'ready' && status.mars === 'ready' && status.space === 'ready';
         return (
-          <div key={world} className={styles.slot} data-world={world} data-ready={ready}
+          <div key={world} className={styles.slot} data-world={world}
             style={{ left: size.width / 2 + slot.x, top: size.height / 2 - slot.y, width: reach * 2, height: reach * 2 }}>
             <button type="button" className={styles.planet} aria-label={`${name} · ${count}`}
               onClick={() => openWorld(world)}
@@ -147,7 +131,7 @@ export default function LibraryHub({ language, controls }: { language: Language;
               onFocus={() => { input.current.hover = world; }}
               onBlur={() => { if (input.current.hover === world) input.current.hover = null; }} />
             <button type="button" className={styles.name} tabIndex={-1}
-              disabled={!ready || Boolean(busy)}
+              disabled={Boolean(busy)}
               style={stacked ? undefined : { top: reach + slot.r + 14 }}
               onClick={() => openWorld(world)}>
               <strong>{name}</strong>

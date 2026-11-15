@@ -40,12 +40,9 @@
   backdrop-filter: var(--glass-blur);
   white-space: nowrap;
   translate: -50% 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity .8s ease .2s, background .4s ease;
+  transition: opacity .35s ease, background .4s ease;
 }
 
-.slot[data-ready='true'] .name { opacity: 1; pointer-events: auto; }
 .name strong { font-size: 1.15rem; font-weight: 600; }
 .name small { color: #bcbcc2; font-size: .9rem; }
 .planet:hover + .name, .planet:focus-visible + .name, .name:hover { background: var(--glass-hover); }
