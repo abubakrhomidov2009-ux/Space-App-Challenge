@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { museumCopy, type Language } from '../museum/languages';
 import { missionIds, missions, type MissionId } from '../museum/missions';
+import { timeline } from '../museum/timeline';
 import SourceLink from '../museum/source-link';
 import { libraryCopy } from './labels';
 import SilenceCounter from './silence-counter';
@@ -23,8 +24,9 @@ function formatCoordinates(mission: typeof missions[MissionId]) {
 
 // A mission's page in the library: a full-width photograph with the name set over it, the story in
 // a narrow column beside a short fact sheet, then the map or track, the sources and the next story.
-export default function Dossier({ id, language, children }: { id: MissionId; language: Language; children?: ReactNode }) {
+export default function Dossier({ id, language, children, sideExhibit }: { id: MissionId; language: Language; children?: ReactNode; sideExhibit?: ReactNode }) {
   const mission = missions[id];
+  const { statusSource } = timeline[id];
   const text = mission.copy[language];
   const labels = museumCopy[language];
   const library = libraryCopy[language];
@@ -64,6 +66,7 @@ export default function Dossier({ id, language, children }: { id: MissionId; lan
             <div><dt>{word.place}</dt><dd>{text.location}</dd></div>
             {coordinates && <div><dt>{word.coordinates}</dt><dd>{coordinates}</dd></div>}
           </dl>
+          {sideExhibit}
         </aside>
       </div>
 
@@ -72,6 +75,7 @@ export default function Dossier({ id, language, children }: { id: MissionId; lan
       <footer className={styles.end}>
         <p className={styles.sources}>
           <SourceLink href={mission.sources.mission}>{labels.mission}</SourceLink>
+          {statusSource && <SourceLink href={statusSource}>{labels.statusSource}</SourceLink>}
           <SourceLink href={mission.sources.coordinates}>{siteLabel}</SourceLink>
         </p>
         {next !== id && (

@@ -3,6 +3,7 @@ export type Language = keyof typeof languages;
 
 export const museumCopy = {
   ru: {
+    statusSource: 'Источник статуса',
     spaceLocation: 'Место миссии', spaceArtwork: 'Иллюстрация', spaceImage: 'Снимок с аппарата', marsOrbit: 'Место миссии', hirise: 'Снимок HiRISE', marsImage: 'Изображение Марса · NASA', phobosPhoto: 'Снимок Фобоса · NASA', dronePhoto: 'Снимок с воздуха · NASA/JPL-Caltech', ingenuityPhoto: 'Снимок · NASA/JPL-Caltech/ASU/MSSS',
     landingRegion: 'Район посадки', orbit: 'Орбита телескопа',
     language: 'Язык', moon: 'Луна', mars: 'Марс', earth: 'Земля',
@@ -28,6 +29,7 @@ export const museumCopy = {
     trackNote: 'Схема по карте MIIGAiK и DLR, 2012. Порядок проезда на ней не показан.', routeOdometer: 'Одометр NASA', routeSource: 'Данные маршрута: NASA/PDS, Tim Parker',
   },
   en: {
+    statusSource: 'Status source',
     spaceLocation: 'Mission location', spaceArtwork: 'Illustration', spaceImage: 'Spacecraft image', marsOrbit: 'Mission location', hirise: 'HiRISE image', marsImage: 'Mars image · NASA', phobosPhoto: 'Phobos image · NASA', dronePhoto: 'Aerial image · NASA/JPL-Caltech', ingenuityPhoto: 'Image · NASA/JPL-Caltech/ASU/MSSS',
     landingRegion: 'Landing region', orbit: 'Telescope orbit',
     language: 'Language', moon: 'Moon', mars: 'Mars', earth: 'Earth',
@@ -53,6 +55,7 @@ export const museumCopy = {
     trackNote: 'Redrawn from the MIIGAiK and DLR map, 2012. It does not show the order of the drive.', routeOdometer: 'NASA odometer', routeSource: 'Route data: NASA/PDS, Tim Parker',
   },
   tg: {
+    statusSource: 'Манбаи вазъият',
     spaceLocation: 'Маҳалли миссия', spaceArtwork: 'Тасвир', spaceImage: 'Акс аз дастгоҳи кайҳонӣ', marsOrbit: 'Маҳалли миссия', hirise: 'Акси HiRISE', marsImage: 'Тасвири Миррих · NASA', phobosPhoto: 'Акси Фобос · NASA', dronePhoto: 'Акс аз ҳаво · NASA/JPL-Caltech', ingenuityPhoto: 'Акс · NASA/JPL-Caltech/ASU/MSSS',
     landingRegion: 'Минтақаи фуруд', orbit: 'Мадори телескоп',
     language: 'Забон', moon: 'Моҳ', mars: 'Миррих', earth: 'Замин',

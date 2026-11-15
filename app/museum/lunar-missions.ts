@@ -320,7 +320,7 @@ export const lunarMissions = {
         intro: "Китайская станция доставила на Луну шестиколёсный ровер Юйту.",
         story: [
           "В декабре 2013 года Юйту выехал с платформы «Чанъэ-3». Измерения химического состава грунта помогли исследователям описать местный базальт.",
-          "Оба аппарата остались в Море Дождей. Метка показывает положение посадочной станции.",
+          "Юйту завершил работу в 2016 году, а посадочная станция прекратила научные наблюдения в 2019 году. Оба аппарата остались в Море Дождей. Метка показывает положение посадочной станции.",
         ],
       },
       en: {
@@ -329,7 +329,7 @@ export const lunarMissions = {
         intro: "The Chinese lander delivered the six-wheeled Yutu rover to the Moon.",
         story: [
           "In December 2013, Yutu rolled off the Chang’e 3 platform. Measurements of the soil’s chemical composition helped researchers characterize the local basalt.",
-          "Both spacecraft stayed in the Sea of Rains. The marker shows the position of the lander.",
+          "Yutu retired in 2016, and the lander stopped scientific observations in 2019. Both spacecraft stayed in the Sea of Rains. The marker shows the position of the lander.",
         ],
       },
       tg: {
@@ -338,7 +338,7 @@ export const lunarMissions = {
         intro: "Истгоҳи чинӣ моҳгарди шашчархаи Юйтуро ба Моҳ расонд.",
         story: [
           "Моҳи декабри соли 2013 Юйту аз платформаи Чанъэ-3 поён фаромад. Ченкунии таркиби кимиёвии хок ба муҳаққиқон кумак кард, ки хусусиятҳои базалти маҳаллиро муайян кунанд.",
-          "Ҳар ду дастгоҳ дар Баҳри Боронҳо монданд. Нишона ҷойи истгоҳи фурудро нишон медиҳад.",
+          "Юйту соли 2016 корашро анҷом дод ва истгоҳи фуруд соли 2019 мушоҳидаҳои илмиро қатъ кард. Ҳар ду дастгоҳ дар Баҳри Боронҳо монданд. Нишона ҷойи истгоҳи фурудро нишон медиҳад.",
         ],
       },
     },

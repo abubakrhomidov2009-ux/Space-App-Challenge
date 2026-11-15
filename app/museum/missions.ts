@@ -91,14 +91,14 @@ export const homepageMissionIds = missionIds.filter((id) =>
   missions[id].world !== 'space' && !Object.hasOwn(lunarMissions, id) && !Object.hasOwn(marsMissions, id),
 );
 
-// Each entry uses the shared telescope mesh. Positions are illustrative.
+// Positions are illustrative. The telescopes share a mesh.
 export const orbitExhibits = ([
-  { id: 'hubble', position: [0.050, 0.140, 0.190] },
-  { id: 'spitzer', position: [0.951, -0.406, 0.337] },
-  { id: 'kepler', position: [-0.166, -0.693, 0.821] },
-  { id: 'herschel', position: [-0.994, 0.153, 0.414] },
-  { id: 'planck', position: [-0.386, 0.965, -0.320] },
-  { id: 'wmap', position: [0.816, 0.620, -0.368] },
+  { id: 'voyager1', position: [0.050, 0.140, 0.190] },
+  { id: 'spitzer', position: [0.910, -0.422, 0.360] },
+  { id: 'kepler', position: [0.034, -0.560, 0.745] },
+  { id: 'herschel', position: [-0.931, -0.080, 0.574] },
+  { id: 'planck', position: [-0.455, 0.664, -0.201] },
+  { id: 'wmap', position: [0.627, 0.473, -0.250] },
 ] as const).slice(0, 6);
 
 export const globeMissionIds = missionIds.filter((id) =>

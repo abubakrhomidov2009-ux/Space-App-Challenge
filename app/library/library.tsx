@@ -1,5 +1,7 @@
 'use client';
 
+import VoyagerRoute from '../museum/voyager-route';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
@@ -12,6 +14,7 @@ import { museumCopy } from '../museum/languages';
 import { missionIds, missions, type MissionId } from '../museum/missions';
 import { useLanguage } from '../museum/use-language';
 import { categories, categoryIds, type Category } from './categories';
+import MissionStatus from '../museum/mission-status';
 import { libraryCopy } from './labels';
 import MissionSearch from './mission-search';
 import Dossier from './dossier';
@@ -20,7 +23,7 @@ import LibraryHub, { type HubControls } from './library-hub';
 import { getFog, setFog } from './fog-store';
 import styles from './library.module.css';
 
-const kinds = ['rover', 'lander', 'combined', 'helicopter', 'hardware', 'orbiter', 'telescope'] as const;
+const kinds = ['rover', 'lander', 'combined', 'helicopter', 'hardware', 'orbiter', 'probe', 'telescope'] as const;
 
 // Reorder the list as one smooth motion where the browser supports it; otherwise just update.
 // Only the grid is reordered this way: the timeline's cards are large, and snapshotting them all
@@ -51,6 +54,8 @@ export default function Library({ mission, category }: { mission?: typeof missio
   const [kind, setKind] = useState('');
   const [view, setView] = useState<'timeline' | 'grid'>('timeline');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<Category>();
+  const filtersOpen = Boolean(category && filterCategory === category);
   const hub = useRef<HubControls | null>(null);
   // Arriving from the entrance flight, the fog that covered the view now clears. It is the same
   // fog element, kept in the layout, so there is no frame between closing and opening.
@@ -136,7 +141,8 @@ export default function Library({ mission, category }: { mission?: typeof missio
         <LanguageSettings language={language} onChange={changeLanguage} />
       </header>
       {mission && missionId ? (
-        <Dossier id={missionId} language={language}>
+        <Dossier id={missionId} language={language}
+          sideExhibit={missionId === 'voyager1' ? <VoyagerRoute language={language} playKey={0} /> : undefined}>
           {extras?.track && (
             <TrackMap track={extras.track} language={language} playKey={0} world={mission.world as 'moon' | 'mars'}
               sourceUrl={extras.trackSource} lroKm={extras.trackLroKm}
@@ -177,25 +183,38 @@ export default function Library({ mission, category }: { mission?: typeof missio
         <>
           <h1>{categoryName}</h1>
           {category === 'space' && <p className={styles.description}>{labels.spaceDescription} · <a href="https://www.eso.org/public/images/eso1907a/">M87* · EHT Collaboration</a></p>}
-          <div className={styles.bar} role="search">
-            <label className={styles.search}>
+          <div className={styles.filterDisclosure} data-open={filtersOpen}>
+            <button type="button" className={styles.filterToggle} aria-expanded={filtersOpen}
+              aria-controls="category-filters" aria-label={labels.filters}
+              onClick={() => setFilterCategory(filtersOpen ? undefined : category)}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" />
+                <path d="M4 6h16M4 12h16M4 18h16" />
               </svg>
-              <input type="search" value={query} placeholder={labels.search} aria-label={labels.search}
-                onChange={(event) => setQuery(event.target.value)} />
-            </label>
-            <div className={styles.kinds} role="group" aria-label={labels.type}>
-              {['', ...kindOptions].map((value) => (
-                <button key={value || 'all'} type="button" aria-pressed={kind === value}
-                  onClick={() => morph(() => setKind(value), view === 'grid')}>{value ? labels[value as typeof kinds[number]] : labels.all}</button>
-              ))}
-            </div>
-            <div className={styles.kinds} role="group" aria-label={views[language].label}>
-              {(['timeline', 'grid'] as const).map((value) => (
-                <button key={value} type="button" aria-pressed={view === value}
-                  onClick={() => setView(value)}>{views[language][value]}</button>
-              ))}
+            </button>
+            <div id="category-filters" className={styles.filterCollapse} data-open={filtersOpen} inert={!filtersOpen}>
+              <div className={styles.filterInner}>
+                <div className={styles.bar} role="search">
+                  <label className={styles.search}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+                      <circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" />
+                    </svg>
+                    <input type="search" value={query} placeholder={labels.search} aria-label={labels.search}
+                      onChange={(event) => setQuery(event.target.value)} />
+                  </label>
+                  <div className={styles.kinds} role="group" aria-label={labels.type}>
+                    {['', ...kindOptions].map((value) => (
+                      <button key={value || 'all'} type="button" aria-pressed={kind === value}
+                        onClick={() => morph(() => setKind(value), view === 'grid')}>{value ? labels[value as typeof kinds[number]] : labels.all}</button>
+                    ))}
+                  </div>
+                  <div className={styles.kinds} role="group" aria-label={views[language].label}>
+                    {(['timeline', 'grid'] as const).map((value) => (
+                      <button key={value} type="button" aria-pressed={view === value}
+                        onClick={() => setView(value)}>{views[language][value]}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <p className={styles.count} role="status">{matches.length ? <>{labels.count} · <b>{matches.length}</b></> : labels.empty}</p>
@@ -218,6 +237,7 @@ export default function Library({ mission, category }: { mission?: typeof missio
                       <p>{text.location} · {labels[entry.kind]}</p>
                       <h2>{text.name}</h2>
                       <p>{text.intro}</p>
+                      <MissionStatus id={id} language={language} />
                     </div>
                   </Link>
                 </li>

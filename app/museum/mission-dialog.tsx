@@ -1,10 +1,12 @@
 'use client';
 
+import VoyagerRoute from './voyager-route';
+
 import MissionContent from './mission-content';
 import { useState, type RefObject } from 'react';
 import { museumCopy, type Language } from './languages';
 import LanguageSettings from './language-settings';
-import type { missions, MissionId } from './missions';
+import { missions, type MissionId } from './missions';
 import RouteMap from './route-map';
 import TrackMap from './track-map';
 import { isWideRoute, type Route, type Track } from './routes';
@@ -13,7 +15,7 @@ import styles from './museum.module.css';
 export default function MissionDialog({
   photoReady,
   photoFailed,
-  mission,
+  id,
   route,
   routeSource,
   odometerSource,
@@ -31,7 +33,7 @@ export default function MissionDialog({
 }: {
   photoReady: boolean;
   photoFailed: boolean;
-  mission: typeof missions[MissionId];
+  id: MissionId;
   route?: Route;
   routeSource?: string;
   odometerSource?: string;
@@ -48,6 +50,7 @@ export default function MissionDialog({
   onReveal: () => void;
 }) {
   const [fogClosed, setFogClosed] = useState(false);
+  const mission = missions[id];
   const labels = museumCopy[language];
 
   return (
@@ -56,7 +59,7 @@ export default function MissionDialog({
         event.preventDefault();
         onClose();
       }}>
-      <div className={styles.missionPanel} data-route={Boolean(route || track)} data-wide={Boolean(route && isWideRoute(route))} data-world={mission.world} onAnimationEnd={(event) => {
+      <div className={styles.missionPanel} data-route={Boolean(route || track || id === 'voyager1')} data-wide={Boolean(route && isWideRoute(route))} data-world={mission.world} onAnimationEnd={(event) => {
         if (event.target !== event.currentTarget) return;
         if (closing) {
           setFogClosed(false);
@@ -71,7 +74,8 @@ export default function MissionDialog({
           {labels.back}
         </button>
         <LanguageSettings language={language} onChange={onLanguageChange} />
-        <MissionContent mission={mission} language={language} photoFailed={photoFailed}>
+        <MissionContent id={id} language={language} photoFailed={photoFailed}>
+          {id === 'voyager1' && <VoyagerRoute language={language} playKey={routeRun} delay={1700} />}
           {track && (
             <TrackMap track={track} language={language} playKey={routeRun} world={mission.world as 'moon' | 'mars'}
               sourceUrl={trackSource} lroKm={trackLroKm}

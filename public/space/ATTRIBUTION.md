@@ -14,3 +14,4 @@
 | dawn | [Архив](https://science.nasa.gov/mission/dawn/) | NASA/JPL-Caltech |
 | rosetta | [Архив](https://science.nasa.gov/photojournal/farewell-rosetta-esa-mission-to-end-on-comet-surface/) | ESA/Rosetta/MPS for OSIRIS Team MPS/UPD/LAM/IAA/SSO/INTA/UPM/DASP/IDA |
 | neowise | [Архив](https://science.nasa.gov/photojournal/neowise-back-to-hunt-more-asteroids-artist-concept/) | NASA/JPL-Caltech |
+| voyager1 | [PIA26353](https://science.nasa.gov/photojournal/nasas-voyager-probe-speeds-through-space-artists-concept/) | NASA/JPL-Caltech |

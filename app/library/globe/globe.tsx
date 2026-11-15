@@ -125,6 +125,8 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
       <MissionDialog {...dialogProps} {...missionExtras(selectedMission)} language={language} onLanguageChange={changeLanguage} />
       <div className={styles.globe}>
         <div ref={host} className={styles.globeCanvas} aria-hidden="true" />
+        {world === 'space' && status.earth !== 'ready' &&
+          <span className={`${museumStyles.galaxyPlaceholder} ${styles.globeGalaxyPlaceholder}`} aria-hidden="true" />}
         <div ref={rotation} className={styles.globeDrag} tabIndex={0} role="group" aria-label={names[world]}
           aria-description={labels.drag}
           onKeyDown={(event) => {
@@ -185,8 +187,8 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
           <span className={museumStyles.nextName} aria-hidden="true">{names[next]}</span>
         </button>
         <p className={styles.globeStatus} role="status">
-          {unavailable || status[world] !== 'ready'
-            ? <span>{unavailable ? copy.unavailable : status[world] === 'error' ? copy.error : copy.loading}</span>
+          {unavailable || status[world] !== 'ready' || (world === 'space' && status.earth !== 'ready')
+            ? <span>{unavailable ? copy.unavailable : (status[world] === 'error' || (world === 'space' && status.earth === 'error')) ? copy.error : copy.loading}</span>
             : (
               <span key={world} className={styles.globeStatusText}>
                 <strong>{names[world]}</strong>

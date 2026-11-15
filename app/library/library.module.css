@@ -71,20 +71,80 @@
 .library h1 { font-size: clamp(2.65rem, 8vw, 5.5rem); line-height: 1; margin: 2rem 0 .6rem; }
 .description { color: #bcbcc2; }
 
-/* Search and filters: one acrylic bar that stays within reach while the list scrolls. */
+.library:has(> .filterDisclosure) {
+  padding-top: calc(max(.75rem, env(safe-area-inset-top)) + 5.75rem);
+}
+
+.filterDisclosure {
+  position: fixed;
+  z-index: 5;
+  top: calc(max(.75rem, env(safe-area-inset-top)) + 3.25rem);
+  left: var(--gutter);
+  width: min(48rem, calc(100% - 2 * var(--gutter)));
+  pointer-events: none;
+}
+
+.filterDisclosure::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 1.6rem;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  opacity: 0;
+  transition: opacity .22s ease;
+}
+
+.filterDisclosure[data-open='true']::before { opacity: 1; }
+
+.filterToggle,
+.filterCollapse[data-open='true'] { pointer-events: auto; }
+
+.filterCollapse[data-open='true'] .bar {
+  max-height: calc(100dvh - max(.75rem, env(safe-area-inset-top)) - 7rem);
+  overflow-y: auto;
+}
+
+.filterToggle {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  color: inherit;
+  border: 0;
+  border-radius: 50%;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  cursor: pointer;
+}
+
+.filterDisclosure[data-open='true'] .filterToggle { margin: .4rem .4rem 0; }
+.filterToggle svg { width: 1.25rem; height: 1.25rem; }
+.filterToggle:hover, .filterToggle[aria-expanded='true'] { background: var(--glass-hover); }
+
+.filterCollapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows .3s ease, opacity .22s ease;
+}
+
+.filterCollapse[data-open='true'] { grid-template-rows: 1fr; opacity: 1; }
+.filterInner { min-height: 0; overflow: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  .filterCollapse, .filterDisclosure::before { transition: none; }
+}
+
 .bar {
-  position: sticky;
-  top: 4.25rem;
-  z-index: 3;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: .5rem .75rem;
-  margin: 1.75rem 0 .5rem;
+  margin: 0;
   padding: .4rem;
-  border-radius: 1.6rem;
-  background: var(--glass);
-  backdrop-filter: var(--glass-blur);
 }
 
 .search {
@@ -358,7 +418,7 @@
   inset: 0;
 }
 
-.globeCanvas canvas { display: block; }
+.globeCanvas canvas { display: block; width: 100%; height: 100%; }
 .globeDrag { touch-action: pan-y; cursor: grab; }
 .globeDrag:active { cursor: grabbing; }
 .globeDrag:focus-visible { outline-offset: -4px; }
@@ -428,4 +488,19 @@
 @media (prefers-reduced-motion: reduce) {
   .card, .category, .detail img { animation: none; }
   .cover img, .category img { transition: none; }
+}
+
+.globe .globeGalaxyPlaceholder {
+  inset: 50% auto auto 50%;
+  width: min(85vw, 80svh);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+
+.cardCopy > :last-child { margin-top: .6rem; }
+
+@media (max-width: 719px), (max-height: 540px), (max-aspect-ratio: 9/10) {
+  .hubTitle { top: 3.4rem; }
+  .hubTitle h1 { margin-top: .35rem; font-size: clamp(1.85rem, 7vw, 2.65rem); }
+  .hubTitle .quickSearch { margin-top: .65rem; min-height: 2.55rem; }
 }

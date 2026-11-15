@@ -68,7 +68,7 @@ export function useMissionDialog(input: RefObject<SceneInput>, rotation: RefObje
     selectedMission,
     openMission,
     dialogProps: {
-      dialog, photoReady, photoFailed, mission: missions[selectedMission], closing, routeRun,
+      dialog, photoReady, photoFailed, id: selectedMission, closing, routeRun,
       onClose: closeMission, onExit: finishMission,
       onReveal: () => { input.current.missionCovered = true; },
     },
