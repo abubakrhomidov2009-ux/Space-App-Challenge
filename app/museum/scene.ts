@@ -234,13 +234,17 @@ export function mountScene(
     groups[world].add(normalized);
     models[world] = normalized;
     onStatus(world, 'ready');
+    if (galaxy && input.hub) onStatus('space', 'ready');
   }
 
   function ensure(world: World) {
     if (loading.has(world)) return;
     loading.add(world);
     void load(world).catch(() => {
-      if (!disposed) onStatus(world, 'error');
+      if (!disposed) {
+        onStatus(world, 'error');
+        if (world === 'earth' && input.hub) onStatus('space', 'error');
+      }
     });
   }
 
@@ -313,6 +317,7 @@ export function mountScene(
   let markerIn = 0;
   let hubFocus = 0;
   let hubReadyAt = 0;
+  let hubGalaxyReadyAt = 0;
   const startedAt = performance.now();
   const hubHover = { moon: 0, mars: 0, space: 0 };
   const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
@@ -410,9 +415,12 @@ export function mountScene(
     syncViewport();
     readScroll();
 
-    ensure(input.destination);
-    if (input.hub) for (const world of ['moon', 'mars', 'space', 'earth'] as const) ensure(world);
-    if (standalone && input.destination === 'space') ensure('earth');
+    if (input.hub) {
+      for (const world of ['moon', 'mars', 'earth'] as const) ensure(world);
+    } else {
+      ensure(input.destination);
+      if (standalone && input.destination === 'space') ensure('earth');
+    }
     if (!standalone && models.moon && exploreTop < height * 0.6) ensure('mars');
     if (finaleTop < height * 1.1) ensure('earth');
 
@@ -421,7 +429,8 @@ export function mountScene(
     const endingTarget = finaleTop / height;
     scroll = still ? scrollTarget : damp(scroll, scrollTarget, 22, dt);
     ending = standalone ? 2 : still ? endingTarget : damp(ending, endingTarget, 22, dt);
-    if (models[input.destination] && displayed !== input.destination) {
+    const destinationReady = models[input.destination] && (input.destination !== 'space' || models.earth);
+    if (destinationReady && displayed !== input.destination) {
       slideDirection = input.switchDirection ?? 1;
       displayed = input.destination;
     }
@@ -452,25 +461,29 @@ export function mountScene(
     hubFocus = still ? Number(Boolean(input.focus)) : damp(hubFocus, input.focus ? 1 : 0, 4.2, dt);
     // The worlds appear together, one after another, only once every model has loaded. Parsing a
     // model mid-animation would stall the frames, so nothing moves while they are still arriving.
-    if (input.hub && !hubReadyAt && ((models.moon && models.mars && models.space && models.earth) || time - startedAt > 9000)) hubReadyAt = time;
+    if (input.hub && !hubReadyAt && ((models.moon && models.mars && models.earth) || time - startedAt > 9000)) hubReadyAt = time;
+    if (hubReadyAt && models.earth && !hubGalaxyReadyAt) hubGalaxyReadyAt = time;
     const hubEase = smoothstep(hubFocus, 0, 1);
     for (const world of ['moon', 'mars', 'space'] as const) {
       if (input.hub) {
         const slot = hubSlots[world];
         const own = input.focus === world;
         const order = world === 'moon' ? 0 : world === 'mars' ? 1 : 2;
-        const reveal = !hubReadyAt || !models[world] ? 0 : still ? 1 : clamp01((time - hubReadyAt - order * 140) / 1100);
+        const model = models[world === 'space' ? 'earth' : world];
+        const readyAt = world === 'space' ? hubGalaxyReadyAt : hubReadyAt;
+        const reveal = !readyAt || !model ? 0 : still ? 1 : clamp01((time - readyAt - order * 140) / 1100);
         hubHover[world] = still ? 0 : damp(hubHover[world], input.hover === world && !input.focus ? 1 : 0, 6, dt);
         const show = soft(reveal);
         // The chosen world grows into the middle of the view; the others ease away and dim out.
         const grow = own ? hubEase : 0;
         const fade = own ? 1 : 1 - hubEase;
-        const size = lerp(slot.r, radius * 0.92, grow) * (1 + 0.045 * hubHover[world]) * lerp(0.72, 1, show) * fade;
+        const entryScale = world === 'space' ? show : lerp(0.72, 1, show);
+        const size = lerp(slot.r, radius * 0.92, grow) * (1 + 0.045 * hubHover[world]) * entryScale * fade;
         const hubGroup = groups[world];
         // A loaded world is drawn once at a vanishing size before it is shown. The first draw is when
         // the GPU compiles its shaders and uploads its textures, which would otherwise stall the
         // frame in which the worlds appear.
-        const warm = show <= 0.002 && Boolean(models[world]);
+        const warm = show <= 0.002 && Boolean(model);
         hubGroup.visible = warm || (show > 0.002 && fade > 0.002);
         hubGroup.scale.setScalar(warm ? 0.001 : Math.max(size * (world === 'space' ? lerp(1.32, 0.77, grow) : 1), 0.001));
         hubGroup.position.set(
@@ -491,7 +504,7 @@ export function mountScene(
       const group = groups[world];
       const risingRadius = lerp(horizonRadius, radius, arrival);
       const heroVisible = horizon > 0.001 && active;
-      group.visible = prominence > 0.001 && (arrival > 0.001 || heroVisible) && departure < 0.999 && (!still || departure === 0);
+      group.visible = prominence > 0.001 && (world !== 'space' || Boolean(models.earth)) && (arrival > 0.001 || heroVisible) && departure < 0.999 && (!still || departure === 0);
       // The outgoing globe shrinks to nothing as it leaves, so it never has to pop out of view.
       const presence = still ? 1 : smoothstep(prominence, 0, 0.3);
       group.scale.setScalar(risingRadius * (world === 'space' ? 0.77 : 1) * lerp(0.53, 1, prominence) * lerp(1, 0.18, departure) * presence * lerp(0.84, 1, entry));
@@ -596,7 +609,7 @@ export function mountScene(
     earth.rotation.set(0.22, still ? 0.7 : 0.7 + 0.22 * earthArrival, -0.24);
     if (standalone && groups.space.visible && models.earth) {
       earth.visible = true;
-      earth.scale.setScalar(groups.space.scale.x * (input.hub ? 1.0 : 1.45));
+      earth.scale.setScalar(groups.space.scale.x * (input.hub ? 1 : 1.45 * entry));
       earth.position.copy(groups.space.position);
       earth.quaternion.copy(groups.space.quaternion).multiply(galaxyBaseTilt);
     }

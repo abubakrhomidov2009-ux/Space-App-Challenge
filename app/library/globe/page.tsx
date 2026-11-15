@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Globe from './globe';
 
-export const metadata: Metadata = { title: 'Глобус — TMAS' };
+export const metadata: Metadata = { title: 'Globe — TMAS' };
 
 export default async function GlobePage({ searchParams }: {
   searchParams: Promise<{ world?: string }>;

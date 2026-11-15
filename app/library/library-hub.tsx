@@ -139,8 +139,6 @@ export default function LibraryHub({ language, controls }: { language: Language;
         return (
           <div key={world} className={styles.slot} data-world={world} data-ready={status.moon === 'ready' && status.mars === 'ready' && status.space === 'ready'}
             style={{ left: size.width / 2 + slot.x, top: size.height / 2 - slot.y, width: reach * 2, height: reach * 2 }}>
-            {world === 'space' && status.earth !== 'ready' &&
-              <span className={museumStyles.galaxyPlaceholder} aria-hidden="true" />}
             <button type="button" className={styles.planet} aria-label={`${name} · ${count}`}
               onClick={() => openWorld(world)}
               onPointerEnter={() => { input.current.hover = world; }}

@@ -1,5 +1,6 @@
 export const languages = { ru: 'Русский', en: 'English', tg: 'Тоҷикӣ' } as const;
 export type Language = keyof typeof languages;
+export const defaultLanguage = 'en' satisfies Language;
 
 export const museumCopy = {
   ru: {
