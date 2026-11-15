@@ -22,6 +22,8 @@ export default function MissionSearch({ language, open, onClose, onFly }: {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const input = useRef<HTMLInputElement>(null);
+  const overlay = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLUListElement>(null);
   const listId = useId();
 
   const found = useMemo(() => {
@@ -37,15 +39,34 @@ export default function MissionSearch({ language, open, onClose, onFly }: {
     if (!open) return;
     setQuery('');
     setActive(0);
-    const frame = requestAnimationFrame(() => input.current?.focus());
-    return () => cancelAnimationFrame(frame);
+    const viewport = window.visualViewport;
+    function fitViewport() {
+      if (!viewport) return;
+      overlay.current?.style.setProperty('--search-height', `${viewport.height}px`);
+      overlay.current?.style.setProperty('--search-top', `${viewport.offsetTop}px`);
+    }
+    fitViewport();
+    viewport?.addEventListener('resize', fitViewport);
+    viewport?.addEventListener('scroll', fitViewport);
+    const frame = requestAnimationFrame(() => input.current?.focus({ preventScroll: true }));
+    return () => {
+      cancelAnimationFrame(frame);
+      viewport?.removeEventListener('resize', fitViewport);
+      viewport?.removeEventListener('scroll', fitViewport);
+    };
   }, [open]);
 
   useEffect(() => setActive(0), [query]);
 
   // Keep the highlighted result in view as the arrow keys move through a long list.
   useEffect(() => {
-    if (open && results[active]) document.getElementById(`${listId}-${results[active]}`)?.scrollIntoView({ block: 'nearest' });
+    const scrollArea = list.current;
+    const option = scrollArea?.children[active];
+    if (!open || !scrollArea || !option) return;
+    const bounds = scrollArea.getBoundingClientRect();
+    const row = option.getBoundingClientRect();
+    if (row.top < bounds.top) scrollArea.scrollTop += row.top - bounds.top;
+    else if (row.bottom > bounds.bottom) scrollArea.scrollTop += row.bottom - bounds.bottom;
   }, [active, open, results, listId]);
 
   function choose(id: MissionId) {
@@ -57,7 +78,7 @@ export default function MissionSearch({ language, open, onClose, onFly }: {
   if (!open) return null;
 
   return (
-    <div className={styles.overlay} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <div ref={overlay} className={styles.overlay} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <div className={styles.panel} role="dialog" aria-modal="true" aria-label={labels.search}
         onKeyDown={(event) => {
           if (event.key === 'Escape') { event.preventDefault(); onClose(); }
@@ -74,12 +95,12 @@ export default function MissionSearch({ language, open, onClose, onFly }: {
             value={query} placeholder={labels.search} aria-label={labels.search}
             onChange={(event) => setQuery(event.target.value)} />
         </div>
-        <ul id={listId} role="listbox" className={styles.results}>
+        <ul ref={list} id={listId} role="listbox" className={styles.results}>
           {results.map((id, index) => {
             const text = missions[id].copy[language];
             return (
               <li key={id} id={`${listId}-${id}`} role="option" aria-selected={index === active}
-                data-active={index === active} onMouseMove={() => setActive(index)} onClick={() => choose(id)}>
+                data-active={index === active} onClick={() => choose(id)}>
                 <span>{text.name}</span>
                 <small>{text.location}</small>
                 <MissionStatus id={id} language={language} />
