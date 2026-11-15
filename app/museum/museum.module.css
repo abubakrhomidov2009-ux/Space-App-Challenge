@@ -9,11 +9,19 @@
 .sky {
   position: fixed;
   z-index: -1;
-  inset: 0;
+  inset: 0 0 auto;
+  height: 100vh;
+  height: 100lvh;
   pointer-events: none;
 }
 
-.sky canvas { display: block; }
+.sky canvas { display: block; width: 100%; height: 100%; }
+
+@supports (-webkit-touch-callout: none) {
+  .museum { overflow: visible; }
+  .sky { z-index: 0; transform: translateZ(0); }
+  .hero, .explore, .finale { z-index: 1; }
+}
 
 .hero,
 .explore,
@@ -1198,4 +1206,92 @@
 
 .next[data-next='space'] .nextDisc::after {
   background: none;
+}
+
+.galaxyPlaceholder {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: #080910 url('/planets/galaxy.webp') center / contain no-repeat;
+  transform: rotate(-19deg) scaleY(.72);
+  pointer-events: none;
+}
+
+.missionStatus {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: .45em;
+  color: #c2c2c9;
+  font-size: .85rem;
+  line-height: 1.35;
+}
+
+.missionStatus::before {
+  content: '';
+  flex: none;
+  width: .45em;
+  height: .45em;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.missionStatus[data-standing='active'] { color: #a4dcb9; }
+.missionStatus[data-standing='lost'],
+.missionStatus[data-standing='dormant'] { color: #f1cb91; }
+
+.voyagerRoute {
+  align-self: center;
+  min-width: 0;
+  display: grid;
+  gap: .65rem;
+  padding: 1rem 0;
+  overflow-wrap: anywhere;
+}
+
+.voyagerRoute h3, .voyagerRoute p { margin: 0; }
+.voyagerRoute h3 { font-size: clamp(1rem, 1.5vw, 1.25rem); }
+.voyagerMap { display: block; width: 100%; height: clamp(6rem, 21svh, 11rem); }
+.voyagerControls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .4rem .6rem; }
+.voyagerControls > p { font-size: .9rem; }
+.missionPanel .voyagerRoute { padding-inline: var(--gutter); }
+.voyagerAhead, .voyagerDrawn { fill: none; stroke-linecap: round; }
+.voyagerAhead { stroke: #ffffff30; stroke-width: 1; }
+.voyagerDrawn { stroke: #c9b9ff; stroke-width: 1.5; }
+.voyagerRoute label, .voyagerRoute input { display: block; width: 100%; }
+.voyagerRoute input { --accent: #c9b9ff; min-width: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .voyagerRoute input { transition: background-size 65ms linear; }
+}
+.voyagerRoute p:last-child { font-size: .85rem; color: #c2bdcf; }
+.voyagerRoute button { font-size: .85rem; padding: .35em .8em; border: 1px solid #ffffff45; border-radius: .45rem; background: transparent; color: inherit; }
+
+@media (min-width: 741px) and (max-width: 1099px) {
+  .missionPanel .voyagerRoute { grid-column: 2; }
+}
+
+@media (min-width: 1100px) {
+  .missionPanel .voyagerRoute { grid-column: 3; padding-inline: 0 clamp(1.5rem, 3vw, 3rem); }
+}
+
+.voyagerRoute .sourceQuiet {
+  display: inline-flex;
+  gap: .35em;
+  padding: .15em .15em .15em 0;
+}
+
+.voyagerRoute .sourceQuiet .sourceIcon {
+  margin-left: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .voyagerRoute .sourceQuiet .sourceIcon {
+    transform: translate3d(0, 0, 0);
+    transition: transform .5s ease-in-out, opacity .35s ease-in-out;
+  }
+
+  .voyagerRoute .sourceQuiet:is(:hover, :focus-visible) .sourceIcon {
+    transform: translate3d(1.5px, -1.5px, 0);
+  }
 }

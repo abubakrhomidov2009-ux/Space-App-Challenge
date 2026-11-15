@@ -5,7 +5,7 @@ import type { Language } from './languages';
 // differently: contact lost (the spacecraft stopped answering), work ended (the operators closed
 // the mission or the spacecraft finished), left behind (the crew or the return stage flew away and
 // the rest stayed). Dates are UTC; a time is given only where the primary source states it.
-export type Standing = 'lost' | 'ended' | 'left' | 'active' | 'placed';
+export type Standing = 'lost' | 'ended' | 'left' | 'active' | 'dormant';
 
 export type Chapter = {
   standing: Standing;
@@ -15,6 +15,7 @@ export type Chapter = {
   since?: string;
   // Official closing of the mission, when it came after the last contact.
   closed?: string;
+  statusSource?: string;
 };
 
 export const timeline: Record<MissionId, Chapter> = {
@@ -31,21 +32,23 @@ export const timeline: Record<MissionId, Chapter> = {
   luna20: { standing: 'left', arrived: '1972-02-21', since: '1972-02-22T22:58:00Z' },
   luna24: { standing: 'left', arrived: '1976-08-18T06:36:00Z', since: '1976-08-19T05:25:00Z' },
   lunokhod: { standing: 'lost', arrived: '1970-11-17', since: '1971-09-14', closed: '1971-10-04' },
-  change3: { standing: 'placed', arrived: '2013-12-14' },
+  change3: { standing: 'ended', arrived: '2013-12-14',
+    statusSource: 'https://vsso.nssdc.ac.cn/mobile/nssdc_zh/html/task/change3.html' },
   vikram: { standing: 'ended', arrived: '2023-08-23', since: '2023-09-04' },
   slim: { standing: 'ended', arrived: '2024-01-19', since: '2024-08-23' },
   spirit: { standing: 'lost', arrived: '2004-01-04', since: '2010-03-22', closed: '2011-05-25' },
   opportunity: { standing: 'lost', arrived: '2004-01-25', since: '2018-06-10', closed: '2019-02-13' },
   viking: { standing: 'lost', arrived: '1976-07-20', since: '1982-11-13' },
   pathfinder: { standing: 'lost', arrived: '1997-07-04', since: '1997-09-27' },
-  insight: { standing: 'ended', arrived: '2018-11-26', since: '2022-12-15', closed: '2022-12-21' },
+  insight: { standing: 'lost', arrived: '2018-11-26', since: '2022-12-15', closed: '2022-12-21' },
   viking2: { standing: 'ended', arrived: '1976-09-03', since: '1980-04-11' },
   phoenix: { standing: 'lost', arrived: '2008-05-25', since: '2008-11-02' },
   beagle2: { standing: 'lost', arrived: '2003-12-25', since: '2003-12-25' },
   schiaparelli: { standing: 'lost', arrived: '2016-10-19', since: '2016-10-19' },
   mars3: { standing: 'lost', arrived: '1971-12-02', since: '1971-12-02' },
   mars6: { standing: 'lost', arrived: '1974-03-12', since: '1974-03-12' },
-  zhurong: { standing: 'ended', arrived: '2021-05-14', since: '2022-05-20' },
+  zhurong: { standing: 'dormant', arrived: '2021-05-14', since: '2022-05-20',
+    statusSource: 'https://english.cas.cn/newsroom/news--archives/2022/cas-in-media/202205/t20220523_1125122.shtml' },
   ingenuity: { standing: 'ended', arrived: '2021-02-18', since: '2024-01-25' },
   polarlander: { standing: 'lost', arrived: '1999-12-03', since: '1999-12-03' },
   'curiosity-stage': { standing: 'left', arrived: '2012-08-06', since: '2012-08-06' },
@@ -53,7 +56,7 @@ export const timeline: Record<MissionId, Chapter> = {
   mariner9: { standing: 'ended', arrived: '1971-11-13', since: '1972-10-27' },
   'mars-global-surveyor': { standing: 'lost', arrived: '1997-09-11', since: '2006-11-02', closed: '2007-01-28' },
   phobos2: { standing: 'lost', arrived: '1989-01-30', since: '1989-03-27' },
-  maven: { standing: 'lost', arrived: '2014-09-22', since: '2025-12-06' },
+  maven: { standing: 'lost', arrived: '2014-09-22', since: '2025-12-06', closed: '2026-06-03' },
   kepler: { standing: 'ended', arrived: '2009-03-07', since: '2018-10-30' },
   herschel: { standing: 'ended', arrived: '2009-05-14', since: '2013-06-17' },
   planck: { standing: 'ended', arrived: '2009-05-14', since: '2013-10-23' },
@@ -64,6 +67,7 @@ export const timeline: Record<MissionId, Chapter> = {
   dawn: { standing: 'ended', arrived: '2007-09-27', since: '2018-11-01' },
   rosetta: { standing: 'ended', arrived: '2004-03-02', since: '2016-09-30' },
   neowise: { standing: 'ended', arrived: '2009-12-14', since: '2024-08-08' },
+  voyager1: { standing: 'active', arrived: '1977-09-05T12:56:01Z' },
   hubble: { standing: 'active', arrived: '1990-04-24' },
   spitzer: { standing: 'ended', arrived: '2003-08-25', since: '2020-01-30' },
 };
@@ -101,9 +105,9 @@ export function elapsed(from: string, now: Date): Elapsed {
 }
 
 const standingWords: Record<Language, Record<Standing, string>> = {
-  ru: { lost: 'Связь потеряна', ended: 'Работа завершена', left: 'Оставлен на месте', active: 'Работает', placed: 'На месте с посадки' },
-  en: { lost: 'Contact lost', ended: 'Work ended', left: 'Left behind', active: 'Still working', placed: 'In place since landing' },
-  tg: { lost: 'Иртибот гум шуд', ended: 'Кор анҷом ёфт', left: 'Дар ҷой монд', active: 'Кор мекунад', placed: 'Аз лаҳзаи фуруд дар ҷой' },
+  ru: { lost: 'Связь потеряна', ended: 'Работа завершена', left: 'Оставлен на месте', active: 'Работает', dormant: 'В спящем режиме' },
+  en: { lost: 'Contact lost', ended: 'Work ended', left: 'Left behind', active: 'Still working', dormant: 'In hibernation' },
+  tg: { lost: 'Иртибот гум шуд', ended: 'Кор анҷом ёфт', left: 'Дар ҷой монд', active: 'Кор мекунад', dormant: 'Дар ҳолати хоб' },
 };
 
 export function standingLabel(standing: Standing, language: Language) {

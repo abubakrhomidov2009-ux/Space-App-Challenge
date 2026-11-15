@@ -6,7 +6,7 @@ import { missionIds, missions, type MissionId } from '../museum/missions';
 import { museumCopy } from '../museum/languages';
 import type { Language } from '../museum/languages';
 import type { SceneInput, SceneStatus } from '../museum/scene';
-import { hubLayout, type HubWorld } from './hub-layout';
+import { hubLayout, isStackedHub, type HubWorld } from './hub-layout';
 import { libraryCopy } from './labels';
 import { setFog } from './fog-store';
 import museumStyles from '../museum/museum.module.css';
@@ -125,10 +125,11 @@ export default function LibraryHub({ language, controls }: { language: Language;
     }
   }, [status, flyTo]);
 
+  const stacked = isStackedHub(size.width, size.height);
   const layout = size.width ? hubLayout(size.width, size.height) : null;
 
   return (
-    <div ref={root} className={styles.hub} data-busy={busy ? 'true' : undefined}>
+    <div ref={root} className={styles.hub} data-stacked={stacked} data-busy={busy ? 'true' : undefined}>
       <div ref={host} className={styles.sky} aria-hidden="true" />
       {layout && worlds.map((world) => {
         const slot = layout[world];
@@ -138,13 +139,15 @@ export default function LibraryHub({ language, controls }: { language: Language;
         return (
           <div key={world} className={styles.slot} data-world={world} data-ready={status.moon === 'ready' && status.mars === 'ready' && status.space === 'ready'}
             style={{ left: size.width / 2 + slot.x, top: size.height / 2 - slot.y, width: reach * 2, height: reach * 2 }}>
+            {world === 'space' && status.earth !== 'ready' &&
+              <span className={museumStyles.galaxyPlaceholder} aria-hidden="true" />}
             <button type="button" className={styles.planet} aria-label={`${name} · ${count}`}
               onClick={() => openWorld(world)}
               onPointerEnter={() => { input.current.hover = world; }}
               onPointerLeave={() => { if (input.current.hover === world) input.current.hover = null; }}
               onFocus={() => { input.current.hover = world; }}
               onBlur={() => { if (input.current.hover === world) input.current.hover = null; }} />
-            <span className={styles.name} style={{ top: reach + slot.r + 14 }}>
+            <span className={styles.name} style={stacked ? undefined : { top: reach + slot.r + 14 }}>
               <strong>{name}</strong>
               <small>{count}</small>
             </span>

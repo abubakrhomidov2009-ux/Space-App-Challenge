@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { missionIds, missions, type MissionId } from '../museum/missions';
 import type { Language } from '../museum/languages';
+import MissionStatus from '../museum/mission-status';
 import { libraryCopy } from './labels';
 import styles from './mission-search.module.css';
 
@@ -81,6 +82,7 @@ export default function MissionSearch({ language, open, onClose, onFly }: {
                 data-active={index === active} onMouseMove={() => setActive(index)} onClick={() => choose(id)}>
                 <span>{text.name}</span>
                 <small>{text.location}</small>
+                <MissionStatus id={id} language={language} />
               </li>
             );
           })}

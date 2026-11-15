@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import type { Language } from '../museum/languages';
 import type { MissionId } from '../museum/missions';
-import { elapsed, hasTime, standingLabel, timeline, unitWords } from '../museum/timeline';
+import { elapsed, hasTime, timeline, unitWords } from '../museum/timeline';
+import MissionStatus from '../museum/mission-status';
 import styles from './silence-counter.module.css';
 
 const two = (value: number) => String(value).padStart(2, '0');
@@ -29,7 +30,7 @@ export default function SilenceCounter({ id, language, label = true }: { id: Mis
 
   return (
     <span className={styles.counter}>
-      {label && <small className={styles.label}>{standingLabel(chapter.standing, language)}</small>}
+      {label && <MissionStatus id={id} language={language} />}
       <span className={styles.value} aria-live="off">
         {value && words ? (
           <>

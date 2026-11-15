@@ -1,4 +1,43 @@
 export const spaceMissions = {
+  voyager1: {
+    world: 'space', kind: 'probe', siteKind: 'spaceLocation',
+    image: '/space/voyager1.webp', imageKind: 'spaceArtwork',
+    imageCredit: 'NASA/JPL-Caltech',
+    sources: {
+      mission: 'https://science.nasa.gov/mission/voyager/voyager-1/',
+      coordinates: 'https://science.nasa.gov/mission/voyager/where-are-voyager-1-and-voyager-2-now/',
+      photo: 'https://science.nasa.gov/photojournal/nasas-voyager-probe-speeds-through-space-artists-concept/',
+    },
+    copy: {
+      ru: {
+        name: 'Вояджер-1',
+        location: 'Межзвёздное пространство',
+        intro: 'Самый далёкий от Земли аппарат, созданный человеком.',
+        story: [
+          'NASA запустило зонд 5 сентября 1977 года для изучения Юпитера и Сатурна. Снимки «Вояджера-1» показали действующие вулканы на Ио, спутнике Юпитера.',
+          'В августе 2012 года зонд пересёк границу гелиосферы и вышел в межзвёздное пространство. Он продолжает передавать научные данные и несёт Золотую пластинку со звуками и изображениями Земли.',
+        ],
+      },
+      en: {
+        name: 'Voyager 1',
+        location: 'Interstellar space',
+        intro: 'The most distant human-made spacecraft from Earth.',
+        story: [
+          'NASA launched the probe on September 5, 1977, to study Jupiter and Saturn. Voyager 1 images revealed active volcanoes on Io, a moon of Jupiter.',
+          'In August 2012, the probe crossed the boundary of the heliosphere into interstellar space. It continues to send scientific data and carries a Golden Record with sounds and images from Earth.',
+        ],
+      },
+      tg: {
+        name: 'Вояҷер-1',
+        location: 'Фазои байниситоравӣ',
+        intro: 'Дуртарин дастгоҳи сохтаи инсон аз Замин.',
+        story: [
+          'NASA зондро 5 сентябри соли 1977 барои омӯзиши Муштарӣ ва Зуҳал сар дод. Аксҳои Вояҷер-1 вулқонҳои фаъолро дар Ио, яке аз радифҳои Муштарӣ, ошкор карданд.',
+          'Моҳи августи соли 2012 зонд аз марзи ҳелиосфера гузашта, ба фазои байниситоравӣ баромад. Он ҳанӯз маълумоти илмӣ мефиристад ва Лавҳаи тиллоии дорои садоҳо ва тасвирҳои Заминро бо худ мебарад.',
+        ],
+      },
+    },
+  },
   kepler: {
     world: 'space', kind: 'telescope', siteKind: 'spaceLocation',
     image: '/space/kepler.webp', imageKind: 'spaceArtwork',

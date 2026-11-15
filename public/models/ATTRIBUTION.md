@@ -27,3 +27,5 @@
 - `insight.webp` — последнее селфи InSight (PIA25287), NASA/JPL-Caltech; обрезан, чтобы убрать чёрные поля мозаики.
 
 - [Galaxy](https://sketchfab.com/3d-models/galaxy-dbb2f075329747a09cc8add2ad05acad) — 991519166, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). В сцене скрыта фоновая сфера и задан наклон диска.
+
+- [Voyager Probe (A)](https://science.nasa.gov/3d-resources/voyager-probe-a/) — NASA/Christopher R. Meaney, [правила использования NASA](https://www.nasa.gov/nasa-brand-center/images-and-media/). В сцене масштаб условный.

@@ -51,14 +51,21 @@ export function mountScene(
   onStatus: (world: World, status: ModelStatus) => void,
 ) {
   const standalone = explore === null;
-  const useGalaxy = standalone && !input.hub;
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.matchMedia('(pointer: coarse)').matches ? 1.25 : 1.75));
+  const useGalaxy = standalone;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: standalone, powerPreference: 'low-power' });
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+  const gl = renderer.getContext();
+  const maxBuffer = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE);
+  const [maxViewportWidth, maxViewportHeight] = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
+  const maxPixels = coarsePointer ? 2_500_000 : 5_000_000;
+  let resolutionCap = coarsePointer ? 1.25 : 1.75;
+  let deviceRatio = 0;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.domElement.setAttribute('aria-hidden', 'true');
   host.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
+  if (!standalone) scene.background = new THREE.Color('#060608');
   scene.fog = new THREE.Fog('#060608', 1550, 2140);
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 3500);
   camera.position.z = 1500;
@@ -154,19 +161,52 @@ export function mountScene(
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let disposed = false;
 
-  async function load(world: World) {
-    const galaxy = world === 'earth' && useGalaxy;
-    const file = galaxy ? 'galaxy.glb' : world === 'space' ? 'hubble.glb' : `${world}-1k.glb`;
+  async function fetchModel(file: string) {
     const response = await fetch(`/models/${file}`, {
       mode: 'cors',
       priority: 'high',
       signal: requests.signal,
     });
     if (!response.ok) throw new Error(`Model request failed: ${response.status}`);
-    const bytes = await response.arrayBuffer();
-    if (disposed) return;
-    if (world === 'space') loader.setDRACOLoader(draco);
-    const { scene: asset } = await loader.parseAsync(bytes, '/models/');
+    return (await loader.parseAsync(await response.arrayBuffer(), '/models/')).scene;
+  }
+
+  async function load(world: World) {
+    if (world === 'space') {
+      loader.setDRACOLoader(draco);
+      const [hubble, voyager] = await Promise.allSettled([
+        fetchModel('hubble.glb'),
+        fetchModel('voyager1.glb'),
+      ]);
+      if (disposed || hubble.status === 'rejected') {
+        for (const result of [hubble, voyager]) {
+          if (result.status === 'fulfilled') disposeModel(result.value);
+        }
+        if (hubble.status === 'rejected') throw hubble.reason;
+        return;
+      }
+
+      const telescope = normalizeModel(hubble.value);
+      const probe = voyager.status === 'fulfilled' ? normalizeModel(voyager.value) : undefined;
+      for (const [index, exhibit] of orbitExhibits.entries()) {
+        const central = exhibit.id === 'voyager1';
+        const model = central ? probe : telescope.clone();
+        if (!model) continue;
+        const mount = new THREE.Group();
+        mount.position.fromArray(exhibit.position);
+        mount.scale.setScalar(central ? 0.17 : 0.11);
+        mount.rotation.set(0.32, -0.4, index % 2 === 0 ? -0.28 : 0.36);
+        mount.add(model);
+        groups.space.add(mount);
+      }
+      // The clones share resources. Disposing the whole group releases each resource once.
+      models.space = groups.space;
+      onStatus(world, 'ready');
+      return;
+    }
+
+    const galaxy = world === 'earth' && useGalaxy;
+    const asset = await fetchModel(galaxy ? 'galaxy.glb' : `${world}-1k.glb`);
     if (disposed) {
       disposeModel(asset);
       return;
@@ -191,19 +231,7 @@ export function mountScene(
     }
 
     const normalized = normalizeModel(asset);
-    if (world === 'space') {
-      for (const [index, exhibit] of orbitExhibits.entries()) {
-        const telescope = new THREE.Group();
-        telescope.position.fromArray(exhibit.position);
-        telescope.scale.setScalar(0.11);
-        telescope.rotation.set(0.32, -0.4, index % 2 === 0 ? -0.28 : 0.36);
-        // Clones share geometry and materials. The original owns their disposal.
-        telescope.add(normalized.clone());
-        groups.space.add(telescope);
-      }
-    } else {
-      groups[world].add(normalized);
-    }
+    groups[world].add(normalized);
     models[world] = normalized;
     onStatus(world, 'ready');
   }
@@ -216,18 +244,42 @@ export function mountScene(
     });
   }
 
-  let width = 1;
-  let height = 1;
-  const resize = new ResizeObserver(() => {
-    width = Math.max(1, host.clientWidth);
-    height = Math.max(1, host.clientHeight);
-    renderer.setSize(width, height);
+  let width = Math.max(1, host.clientWidth);
+  let height = Math.max(1, host.clientHeight);
+  let resizePending = true;
+  let appliedRatio = 0;
+
+  function requestResize() {
+    resizePending = true;
+  }
+
+  function syncViewport() {
+    const nextDeviceRatio = window.devicePixelRatio || 1;
+    if (!resizePending && nextDeviceRatio === deviceRatio) return;
+    resizePending = false;
+    deviceRatio = nextDeviceRatio;
+    const nextWidth = Math.max(1, host.clientWidth);
+    const nextHeight = Math.max(1, host.clientHeight);
+    const ratio = Math.min(deviceRatio, resolutionCap,
+      Math.min(maxBuffer, maxViewportWidth) / nextWidth,
+      Math.min(maxBuffer, maxViewportHeight) / nextHeight,
+      Math.sqrt(maxPixels / (nextWidth * nextHeight)),
+    );
+    if (nextWidth === width && nextHeight === height && ratio === appliedRatio) return;
+    width = nextWidth;
+    height = nextHeight;
+    appliedRatio = ratio;
+    // Update the buffer and projection together, just before drawing the next frame.
+    renderer.setDrawingBufferSize(width, height, ratio);
     camera.left = -width / 2;
     camera.right = width / 2;
     camera.top = height / 2;
     camera.bottom = -height / 2;
     camera.updateProjectionMatrix();
-  });
+    measureLayout();
+  }
+
+  const resize = new ResizeObserver(requestResize);
   resize.observe(host);
 
   // Section positions are measured in the page once (and when the layout changes), then
@@ -249,11 +301,11 @@ export function mountScene(
   readScroll();
   const layoutWatch = new ResizeObserver(measureLayout);
   if (explore?.parentElement) layoutWatch.observe(explore.parentElement);
-  window.addEventListener('resize', measureLayout);
+  window.addEventListener('resize', requestResize);
 
   let lastFrame = 0;
-  let scroll = 1 - exploreTop / window.innerHeight;
-  let ending = finaleTop / window.innerHeight;
+  let scroll = 1 - exploreTop / height;
+  let ending = finaleTop / height;
   let displayed = input.destination;
   let slideDirection = 1;
   // The standalone globe page: the planet rises in once its model is ready instead of popping in.
@@ -345,8 +397,8 @@ export function mountScene(
       if (sampleFrames === 60) {
         const ratio = renderer.getPixelRatio();
         if (sampleMs / 60 > 30 && ratio > 1) {
-          renderer.setPixelRatio(Math.max(1, ratio - 0.25));
-          renderer.setSize(width, height);
+          resolutionCap = Math.max(1, ratio - 0.25);
+          requestResize();
         }
         sampleMs = 0;
         sampleFrames = 0;
@@ -355,6 +407,7 @@ export function mountScene(
     const dt = Math.min(0.05, (time - lastFrame) / 1000);
     lastFrame = time;
     if (input.missionCovered) return;
+    syncViewport();
     readScroll();
 
     ensure(input.destination);
@@ -391,8 +444,8 @@ export function mountScene(
     pointerY = still ? 0 : damp(pointerY, targetY, 3, dt);
     const driftX = still ? 0 : pointerX + Math.sin(time / 5200) * 0.22;
     const driftY = still ? 0 : pointerY + Math.cos(time / 6400) * 0.16;
-    const radius = Math.min(width * 0.49, height * 0.48);
-    const horizonRadius = Math.max(width * 0.66, height * 0.59);
+    const radius = Math.min(width * 0.49, height * 0.48, 1250);
+    const horizonRadius = Math.min(1250, Math.max(width * 0.66, height * 0.59));
 
     spin = still ? 0 : damp(spin, input.hovering ? 0 : 1, input.hovering ? 3 : 1.6, dt);
     const hubSlots = hubLayout(width, height);
@@ -426,7 +479,10 @@ export function mountScene(
           -500 * (1 - fade),
         );
         if (hubGroup.visible && !still && !input.mission && zoom < 0.03) input[world] -= dt * 0.085 * (1 - 0.7 * hubHover[world]);
-        hubGroup.rotation.set(0.1, input[world], 0);
+        if (world === 'space') {
+          galaxySpin.setFromAxisAngle(galaxyAxis, input.space);
+          hubGroup.quaternion.copy(galaxyBaseTilt).multiply(galaxySpin).multiply(inverseGalaxyTilt);
+        } else hubGroup.rotation.set(0.1, input[world], 0);
         continue;
       }
       const active = displayed === world;
@@ -534,16 +590,15 @@ export function mountScene(
 
     const earth = groups.earth;
     earth.visible = earthArrival > 0.01 && Boolean(models.earth);
-    const earthRadius = Math.max(width * 0.66, height * 0.68);
+    const earthRadius = Math.min(1250, Math.max(width * 0.66, height * 0.68));
     earth.scale.setScalar(earthRadius);
     earth.position.set(0, -earthRadius - height * lerp(0.51, -0.05, earthArrival), lerp(-840, -90, earthArrival));
     earth.rotation.set(0.22, still ? 0.7 : 0.7 + 0.22 * earthArrival, -0.24);
     if (standalone && groups.space.visible && models.earth) {
       earth.visible = true;
-      earth.scale.setScalar(groups.space.scale.x * (useGalaxy ? 1.45 : 0.8));
+      earth.scale.setScalar(groups.space.scale.x * (input.hub ? 1.0 : 1.45));
       earth.position.copy(groups.space.position);
-      if (useGalaxy) earth.quaternion.copy(groups.space.quaternion).multiply(galaxyBaseTilt);
-      else earth.rotation.set(0.14, input.space, -0.24);
+      earth.quaternion.copy(groups.space.quaternion).multiply(galaxyBaseTilt);
     }
     stars.position.y = still ? 0 : 95 * arrival + 140 * departure - driftY * 3;
     stars.position.x = still ? 0 : driftX * 5;
@@ -560,7 +615,7 @@ export function mountScene(
     draco.dispose();
     layoutWatch.disconnect();
     window.removeEventListener('pointermove', onPointer);
-    window.removeEventListener('resize', measureLayout);
+    window.removeEventListener('resize', requestResize);
     resize.disconnect();
     renderer.setAnimationLoop(null);
     for (const model of Object.values(models)) disposeModel(model);
