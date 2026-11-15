@@ -1,3 +1,4 @@
+import { spaceMissions } from './space-missions';
 import { catalogExpansion } from './catalog-expansion';
 import { hubble } from './hubble';
 import { additionalMissions } from './additional-missions';
@@ -81,6 +82,7 @@ export const missions = {
   },
   ...lunarMissions,
   ...marsMissions,
+  ...spaceMissions,
 } as const;
 
 export type MissionId = keyof typeof missions;
