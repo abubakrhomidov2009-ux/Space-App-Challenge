@@ -1,4 +1,4 @@
-import { globeMissionIds, missions, orbitExhibits, type MissionId } from './missions';
+import { globeMissionIds, missionIds, missions, orbitExhibits, type MissionId } from './missions';
 import * as THREE from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -51,6 +51,7 @@ export function mountScene(
   onStatus: (world: World, status: ModelStatus) => void,
 ) {
   const standalone = explore === null;
+  const useGalaxy = standalone && !input.hub;
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.matchMedia('(pointer: coarse)').matches ? 1.25 : 1.75));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -71,6 +72,10 @@ export function mountScene(
   const fill = new THREE.AmbientLight('#dde5fb', 0.14);
   scene.add(stars, key, rim, fill);
 
+  const galaxyAxis = new THREE.Vector3(0, 1, 0);
+  const galaxyBaseTilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.92, 0, -0.33, 'ZYX'));
+  const galaxySpin = new THREE.Quaternion();
+  const inverseGalaxyTilt = galaxyBaseTilt.clone().invert();
   const groups = { moon: new THREE.Group(), mars: new THREE.Group(), earth: new THREE.Group(), space: new THREE.Group() };
   scene.add(...Object.values(groups));
 
@@ -97,6 +102,7 @@ export function mountScene(
       `,
     }),
   );
+  atmosphere.visible = !useGalaxy;
   groups.earth.add(atmosphere);
 
   // A soft halo just beyond the limb of a world, brightest on the sunlit side.
@@ -149,7 +155,9 @@ export function mountScene(
   let disposed = false;
 
   async function load(world: World) {
-    const response = await fetch(world === 'space' ? '/models/hubble.glb' : `/models/${world}-1k.glb`, {
+    const galaxy = world === 'earth' && useGalaxy;
+    const file = galaxy ? 'galaxy.glb' : world === 'space' ? 'hubble.glb' : `${world}-1k.glb`;
+    const response = await fetch(`/models/${file}`, {
       mode: 'cors',
       priority: 'high',
       signal: requests.signal,
@@ -164,7 +172,13 @@ export function mountScene(
       return;
     }
 
-    if (world === 'earth') {
+    if (galaxy) {
+      const backdrop = asset.getObjectByName('Sphere001');
+      if (backdrop) {
+        backdrop.removeFromParent();
+        disposeModel(backdrop);
+      }
+    } else if (world === 'earth') {
       asset.traverse((node) => {
         if (!(node instanceof THREE.Mesh)) return;
         for (const material of [node.material].flat()) {
@@ -278,11 +292,20 @@ export function mountScene(
     opportunity: -28, schiaparelli: 28,
     ingenuity: -27, 'perseverance-backshell': 27,
   };
-  const sites = globeMissionIds.flatMap<{ id: MissionId; world: Destination; point: THREE.Vector3 }>((id) => {
+  const sceneMissionIds = input.hub ? missionIds : globeMissionIds;
+  const diagramIds = sceneMissionIds.filter((id) =>
+    missions[id].world === 'space' && !orbitExhibits.some((exhibit) => exhibit.id === id),
+  );
+  const sites = sceneMissionIds.flatMap<{ id: MissionId; world: Destination; point: THREE.Vector3; diagram?: boolean }>((id) => {
     const mission = missions[id];
     if (mission.world === 'space') {
-      const exhibit = orbitExhibits.find((entry) => entry.id === id)!;
-      return [{ id, world: mission.world, point: new THREE.Vector3().fromArray(exhibit.position) }];
+      const exhibit = orbitExhibits.find((entry) => entry.id === id);
+      if (exhibit) return [{ id, world: mission.world, point: new THREE.Vector3().fromArray(exhibit.position) }];
+      const angle = (diagramIds.indexOf(id) + 0.5) * 2 * Math.PI / diagramIds.length;
+      return [{
+        id, world: mission.world, diagram: true,
+        point: new THREE.Vector3(1.05 * Math.cos(angle), 1.05 * Math.sin(angle), 0.35),
+      }];
     }
     if (!('latitude' in mission)) return [];
     const latitude = THREE.MathUtils.degToRad(mission.latitude);
@@ -300,6 +323,8 @@ export function mountScene(
   const site = new THREE.Vector3();
   const globeCenter = new THREE.Vector3();
   const startSite = new THREE.Vector3();
+  const localTarget = new THREE.Vector3();
+  const inverseRotation = new THREE.Quaternion();
   const siteDirection = new THREE.Vector3();
   const viewDirection = new THREE.Vector3(0, 0, 1);
   const turnToFront = new THREE.Quaternion();
@@ -427,7 +452,10 @@ export function mountScene(
       }
       // Start each frame from the browsing pose, including zero roll.
       // Slerping toward a mission can change all three Euler angles.
-      group.rotation.set(0.1, input[world], 0);
+      if (world === 'space' && useGalaxy) {
+        galaxySpin.setFromAxisAngle(galaxyAxis, input.space);
+        group.quaternion.copy(galaxyBaseTilt).multiply(galaxySpin).multiply(inverseGalaxyTilt);
+      } else group.rotation.set(0.1, input[world], 0);
     }
 
     if (input.mission) zoomedMission = input.mission;
@@ -439,7 +467,7 @@ export function mountScene(
     // Points arrive late and slowly (about a second) once the globe is at rest, and leave quickly.
     const markersReady = handoff[displayed] > 0.9 && entryIn > 0.9 && arrival > 0.9 && departure < 0.06;
     markerIn = still ? Number(markersReady) : damp(markerIn, markersReady ? 1 : 0, markersReady ? 5.5 : 9, dt);
-    for (const { id, world, point } of sites) {
+    for (const { id, world, point, diagram } of sites) {
       const group = groups[world];
       const marker = markers[id];
       if (!marker) continue;
@@ -447,18 +475,20 @@ export function mountScene(
         marker.hidden = true;
         continue;
       }
-      site.copy(point).applyMatrix4(group.matrixWorld);
+      site.copy(point);
+      if (diagram) site.multiplyScalar(group.scale.x).add(group.position);
+      else site.applyMatrix4(group.matrixWorld);
       globeCenter.setFromMatrixPosition(group.matrixWorld);
       // A point eases into view as its side of the globe turns toward us, instead of popping on.
       const facing = world === 'space'
-        ? Number(site.z > globeCenter.z || Math.hypot(site.x - globeCenter.x, site.y - globeCenter.y) > group.scale.x * 0.69)
+        ? Number(useGalaxy || site.z > globeCenter.z || Math.hypot(site.x - globeCenter.x, site.y - globeCenter.y) > group.scale.x * 0.69)
         : smoothstep(site.z - globeCenter.z, group.scale.x * 0.1, group.scale.x * 0.3);
       const shown = models[world] && group.visible ? markerIn * facing : 0;
       marker.hidden = shown < 0.01;
       if (!marker.hidden) {
         marker.style.opacity = String(shown);
         marker.style.scale = String(lerp(0.55, 1, smoothstep(shown, 0, 1)));
-        const offset = standalone ? markerOffsets[id] ?? 0 : 0;
+        const offset = world === 'space' && useGalaxy ? 14 : standalone ? markerOffsets[id] ?? 0 : 0;
         // A compositor-driven translate keeps sub-pixel motion smooth,
         // unlike left/top, which re-lays out the marker every frame.
         marker.style.translate = `${width / 2 + site.x}px ${height / 2 - site.y + offset}px`;
@@ -475,13 +505,15 @@ export function mountScene(
     if (approach > 0) {
       const target = sites.find(({ id }) => id === zoomedMission)!;
       const group = groups[target.world];
-      startSite.copy(target.point).applyMatrix4(group.matrixWorld);
-      siteDirection.copy(target.point).applyQuaternion(group.quaternion).normalize();
+      localTarget.copy(target.point);
+      if (target.diagram) localTarget.applyQuaternion(inverseRotation.copy(group.quaternion).invert());
+      startSite.copy(localTarget).applyMatrix4(group.matrixWorld);
+      siteDirection.copy(localTarget).applyQuaternion(group.quaternion).normalize();
       turnToFront.setFromUnitVectors(siteDirection, viewDirection);
       facingRotation.multiplyQuaternions(turnToFront, group.quaternion);
       group.quaternion.slerp(facingRotation, approach);
       group.updateMatrixWorld(true);
-      site.copy(target.point).applyMatrix4(group.matrixWorld);
+      site.copy(localTarget).applyMatrix4(group.matrixWorld);
 
       // Magnification should not push the selected site back toward the edge.
       const screenOffset = (1 - approach) / magnification;
@@ -508,9 +540,10 @@ export function mountScene(
     earth.rotation.set(0.22, still ? 0.7 : 0.7 + 0.22 * earthArrival, -0.24);
     if (standalone && groups.space.visible && models.earth) {
       earth.visible = true;
-      earth.scale.setScalar(groups.space.scale.x * 0.8);
+      earth.scale.setScalar(groups.space.scale.x * (useGalaxy ? 1.45 : 0.8));
       earth.position.copy(groups.space.position);
-      earth.rotation.set(0.14, input.space, -0.24);
+      if (useGalaxy) earth.quaternion.copy(groups.space.quaternion).multiply(galaxyBaseTilt);
+      else earth.rotation.set(0.14, input.space, -0.24);
     }
     stars.position.y = still ? 0 : 95 * arrival + 140 * departure - driftY * 3;
     stars.position.x = still ? 0 : driftX * 5;

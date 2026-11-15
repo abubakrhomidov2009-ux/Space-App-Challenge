@@ -93,8 +93,12 @@ export const homepageMissionIds = missionIds.filter((id) =>
 
 // Each entry uses the shared telescope mesh. Positions are illustrative.
 export const orbitExhibits = ([
-  { id: 'hubble', position: [0.78, 0.18, 0.68] },
-  { id: 'spitzer', position: [-0.94, -0.28, 0.54] },
+  { id: 'hubble', position: [0.050, 0.140, 0.190] },
+  { id: 'spitzer', position: [0.951, -0.406, 0.337] },
+  { id: 'kepler', position: [-0.166, -0.693, 0.821] },
+  { id: 'herschel', position: [-0.994, 0.153, 0.414] },
+  { id: 'planck', position: [-0.386, 0.965, -0.320] },
+  { id: 'wmap', position: [0.816, 0.620, -0.368] },
 ] as const).slice(0, 6);
 
 export const globeMissionIds = missionIds.filter((id) =>

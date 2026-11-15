@@ -142,10 +142,10 @@
 }
 
 .next[data-next='space'] {
-  --land: #1c3f86;
-  --map: url('/planets/earth.webp');
-  --turn-from: 30%;
-  --turn-to: 68%;
+  --land: #080910;
+  --map: url('/planets/galaxy.webp');
+  --turn-from: 50%;
+  --turn-to: 50%;
   --halo: #6fa3ee59;
 }
 
@@ -1188,4 +1188,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .mobileDrawer[open], .mobileDrawer[open]::backdrop { animation: none; }
+}
+
+.next[data-next='space'] .nextDisc::before {
+  background-size: contain;
+  background-repeat: no-repeat;
+  transform: rotate(-19deg) scaleY(.72);
+}
+
+.next[data-next='space'] .nextDisc::after {
+  background: none;
 }
