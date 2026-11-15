@@ -1,11 +1,14 @@
 .overlay {
   position: fixed;
-  inset: 0;
+  inset: var(--search-top, 0px) 0 auto;
+  box-sizing: border-box;
+  height: var(--search-height, 100dvh);
   z-index: 20;
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
   align-items: start;
   justify-items: center;
-  padding: 14svh 1rem 1rem;
+  padding: clamp(1rem, calc(var(--search-height, 100dvh) * .14), 14svh) 1rem 1rem;
   background: rgb(0 0 0 / .45);
   backdrop-filter: blur(10px);
   animation: overlayIn .35s ease both;
@@ -13,6 +16,8 @@
 
 .panel {
   width: min(36rem, 100%);
+  max-height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -52,11 +57,13 @@
 
 /* The list scrolls under the pointer or the arrow keys with no scrollbar; its ends fade out. */
 .results {
+  min-height: 0;
   max-height: min(24rem, 52svh);
   margin: 0;
   padding: .35rem .35rem .5rem;
   overflow-y: auto;
   overscroll-behavior: contain;
+  touch-action: pan-y;
   list-style: none;
   scrollbar-width: none;
   mask-image: linear-gradient(transparent, black .9rem, black calc(100% - .9rem), transparent);
@@ -74,6 +81,9 @@
 }
 
 .results li[data-active='true'] { background: rgb(255 255 255 / .09); }
+@media (hover: hover) {
+  .results li[role='option']:hover { background: rgb(255 255 255 / .09); }
+}
 .results small { color: #a7a7ae; }
 .results .note { padding: .5rem 1rem; color: #8f8f96; font-size: .9rem; cursor: default; }
 

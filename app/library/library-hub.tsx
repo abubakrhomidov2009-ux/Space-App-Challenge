@@ -136,8 +136,9 @@ export default function LibraryHub({ language, controls }: { language: Language;
         const reach = slot.r * (world === 'space' ? 1.15 : 1);
         const name = world === 'space' ? labels.space : copy[world];
         const count = missionIds.filter((id) => missions[id].world === world).length;
+        const ready = status.moon === 'ready' && status.mars === 'ready' && status.space === 'ready';
         return (
-          <div key={world} className={styles.slot} data-world={world} data-ready={status.moon === 'ready' && status.mars === 'ready' && status.space === 'ready'}
+          <div key={world} className={styles.slot} data-world={world} data-ready={ready}
             style={{ left: size.width / 2 + slot.x, top: size.height / 2 - slot.y, width: reach * 2, height: reach * 2 }}>
             <button type="button" className={styles.planet} aria-label={`${name} · ${count}`}
               onClick={() => openWorld(world)}
@@ -145,10 +146,13 @@ export default function LibraryHub({ language, controls }: { language: Language;
               onPointerLeave={() => { if (input.current.hover === world) input.current.hover = null; }}
               onFocus={() => { input.current.hover = world; }}
               onBlur={() => { if (input.current.hover === world) input.current.hover = null; }} />
-            <span className={styles.name} style={stacked ? undefined : { top: reach + slot.r + 14 }}>
+            <button type="button" className={styles.name} tabIndex={-1}
+              disabled={!ready || Boolean(busy)}
+              style={stacked ? undefined : { top: reach + slot.r + 14 }}
+              onClick={() => openWorld(world)}>
               <strong>{name}</strong>
               <small>{count}</small>
-            </span>
+            </button>
           </div>
         );
       })}
