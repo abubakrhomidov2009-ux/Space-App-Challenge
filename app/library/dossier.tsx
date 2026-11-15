@@ -37,7 +37,7 @@ export default function Dossier({ id, language, children }: { id: MissionId; lan
   const siteLabel = mission.siteKind === 'landing' ? labels.landing
     : mission.siteKind === 'landingRegion' ? labels.landingRegion
     : mission.siteKind === 'marsOrbit' ? labels.marsOrbit
-    : mission.siteKind === 'orbit' ? labels.orbit : labels.coordinates;
+    : mission.siteKind === 'spaceLocation' ? labels.spaceLocation : mission.siteKind === 'orbit' ? labels.orbit : labels.coordinates;
 
   return (
     <article className={styles.dossier} data-world={mission.world}>
@@ -48,7 +48,7 @@ export default function Dossier({ id, language, children }: { id: MissionId; lan
           <p className={styles.place}>{text.location}</p>
           <h1 id="mission-title">{text.name}</h1>
         </div>
-        <div className={styles.credit}><SourceLink href={mission.sources.photo}>{photoLabel}</SourceLink></div>
+        <div className={styles.credit}><SourceLink href={mission.sources.photo}>{photoLabel}{'imageCredit' in mission && ` · ${mission.imageCredit}`}</SourceLink></div>
       </header>
 
       <div className={styles.body}>

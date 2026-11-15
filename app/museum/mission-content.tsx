@@ -22,7 +22,7 @@ export default function MissionContent({ mission, language, heading: Heading = '
         {!photoFailed && <Image src={mission.image} fill unoptimized
           alt={mission.imageKind === 'model' ? labels.photoAlt : copy.name} />}
         <figcaption>
-          <SourceLink href={mission.sources.photo}>{mission.imageKind === 'model' ? labels.photo : labels[mission.imageKind]}</SourceLink>
+          <SourceLink href={mission.sources.photo}>{mission.imageKind === 'model' ? labels.photo : labels[mission.imageKind]}{'imageCredit' in mission && ` · ${mission.imageCredit}`}</SourceLink>
         </figcaption>
       </figure>
       <article className={styles.missionCopy}>
@@ -32,7 +32,7 @@ export default function MissionContent({ mission, language, heading: Heading = '
         {copy.story.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
         <p className={styles.missionSources}>
           <SourceLink href={mission.sources.mission}>{labels.mission}</SourceLink>
-          <SourceLink href={mission.sources.coordinates}>{mission.siteKind === 'landing' ? labels.landing : mission.siteKind === 'landingRegion' ? labels.landingRegion : mission.siteKind === 'marsOrbit' ? labels.marsOrbit : mission.siteKind === 'orbit' ? labels.orbit : labels.coordinates}</SourceLink>
+          <SourceLink href={mission.sources.coordinates}>{mission.siteKind === 'landing' ? labels.landing : mission.siteKind === 'landingRegion' ? labels.landingRegion : mission.siteKind === 'marsOrbit' ? labels.marsOrbit : mission.siteKind === 'spaceLocation' ? labels.spaceLocation : mission.siteKind === 'orbit' ? labels.orbit : labels.coordinates}</SourceLink>
         </p>
       </article>
       {children}

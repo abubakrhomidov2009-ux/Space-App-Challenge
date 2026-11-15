@@ -2,7 +2,8 @@ export const languages = { ru: 'Русский', en: 'English', tg: 'Тоҷик�
 export type Language = keyof typeof languages;
 
 export const museumCopy = {
-  ru: { marsOrbit: 'Место миссии', hirise: 'Снимок HiRISE', marsImage: 'Изображение Марса · NASA', phobosPhoto: 'Снимок Фобоса · NASA', dronePhoto: 'Снимок с воздуха · NASA/JPL-Caltech', ingenuityPhoto: 'Снимок · NASA/JPL-Caltech/ASU/MSSS',
+  ru: {
+    spaceLocation: 'Место миссии', spaceArtwork: 'Иллюстрация', spaceImage: 'Снимок с аппарата', marsOrbit: 'Место миссии', hirise: 'Снимок HiRISE', marsImage: 'Изображение Марса · NASA', phobosPhoto: 'Снимок Фобоса · NASA', dronePhoto: 'Снимок с воздуха · NASA/JPL-Caltech', ingenuityPhoto: 'Снимок · NASA/JPL-Caltech/ASU/MSSS',
     landingRegion: 'Район посадки', orbit: 'Орбита телескопа',
     language: 'Язык', moon: 'Луна', mars: 'Марс', earth: 'Земля',
     title: 'Что мы оставили в космосе?',
@@ -26,7 +27,8 @@ export const museumCopy = {
     trackLabel: 'От места посадки по колее', trackLro: 'Путь по снимкам LRO', finalPosition: 'Последняя позиция',
     trackNote: 'Схема по карте MIIGAiK и DLR, 2012. Порядок проезда на ней не показан.', routeOdometer: 'Одометр NASA', routeSource: 'Данные маршрута: NASA/PDS, Tim Parker',
   },
-  en: { marsOrbit: 'Mission location', hirise: 'HiRISE image', marsImage: 'Mars image · NASA', phobosPhoto: 'Phobos image · NASA', dronePhoto: 'Aerial image · NASA/JPL-Caltech', ingenuityPhoto: 'Image · NASA/JPL-Caltech/ASU/MSSS',
+  en: {
+    spaceLocation: 'Mission location', spaceArtwork: 'Illustration', spaceImage: 'Spacecraft image', marsOrbit: 'Mission location', hirise: 'HiRISE image', marsImage: 'Mars image · NASA', phobosPhoto: 'Phobos image · NASA', dronePhoto: 'Aerial image · NASA/JPL-Caltech', ingenuityPhoto: 'Image · NASA/JPL-Caltech/ASU/MSSS',
     landingRegion: 'Landing region', orbit: 'Telescope orbit',
     language: 'Language', moon: 'Moon', mars: 'Mars', earth: 'Earth',
     title: 'What did we leave in space?',
@@ -50,7 +52,8 @@ export const museumCopy = {
     trackLabel: 'From the landing site along the track', trackLro: 'Route measured from LRO images', finalPosition: 'Final position',
     trackNote: 'Redrawn from the MIIGAiK and DLR map, 2012. It does not show the order of the drive.', routeOdometer: 'NASA odometer', routeSource: 'Route data: NASA/PDS, Tim Parker',
   },
-  tg: { marsOrbit: 'Маҳалли миссия', hirise: 'Акси HiRISE', marsImage: 'Тасвири Миррих · NASA', phobosPhoto: 'Акси Фобос · NASA', dronePhoto: 'Акс аз ҳаво · NASA/JPL-Caltech', ingenuityPhoto: 'Акс · NASA/JPL-Caltech/ASU/MSSS',
+  tg: {
+    spaceLocation: 'Маҳалли миссия', spaceArtwork: 'Тасвир', spaceImage: 'Акс аз дастгоҳи кайҳонӣ', marsOrbit: 'Маҳалли миссия', hirise: 'Акси HiRISE', marsImage: 'Тасвири Миррих · NASA', phobosPhoto: 'Акси Фобос · NASA', dronePhoto: 'Акс аз ҳаво · NASA/JPL-Caltech', ingenuityPhoto: 'Акс · NASA/JPL-Caltech/ASU/MSSS',
     landingRegion: 'Минтақаи фуруд', orbit: 'Мадори телескоп',
     language: 'Забон', moon: 'Моҳ', mars: 'Миррих', earth: 'Замин',
     title: 'Мо дар кайҳон чӣ гузоштем?',
