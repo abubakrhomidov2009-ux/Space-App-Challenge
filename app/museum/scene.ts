@@ -52,13 +52,21 @@ export function mountScene(
 ) {
   const standalone = explore === null;
   const useGalaxy = standalone;
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: standalone, powerPreference: 'low-power' });
+  let renderer: THREE.WebGLRenderer;
+  let useCompatibilitySettings = false;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: standalone, powerPreference: 'low-power' });
+  } catch {
+    // Retry with a fresh canvas, letting the browser choose the GPU without MSAA.
+    renderer = new THREE.WebGLRenderer({ antialias: false, alpha: standalone });
+    useCompatibilitySettings = true;
+  }
   const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
   const gl = renderer.getContext();
   const maxBuffer = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE);
   const [maxViewportWidth, maxViewportHeight] = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
   const maxPixels = coarsePointer ? 2_500_000 : 5_000_000;
-  let resolutionCap = coarsePointer ? 1.25 : 1.75;
+  let resolutionCap = useCompatibilitySettings ? 1 : coarsePointer ? 1.25 : 1.75;
   let deviceRatio = 0;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.domElement.setAttribute('aria-hidden', 'true');
