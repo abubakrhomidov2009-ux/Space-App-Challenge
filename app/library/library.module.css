@@ -490,13 +490,6 @@
   .cover img, .category img { transition: none; }
 }
 
-.globe .globeGalaxyPlaceholder {
-  inset: 50% auto auto 50%;
-  width: min(85vw, 80svh);
-  aspect-ratio: 1;
-  translate: -50% -50%;
-}
-
 .cardCopy > :last-child { margin-top: .6rem; }
 
 @media (max-width: 719px), (max-height: 540px), (max-aspect-ratio: 9/10) {

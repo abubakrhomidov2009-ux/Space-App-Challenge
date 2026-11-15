@@ -125,8 +125,6 @@ export default function Globe({ initialWorld }: { initialWorld: Destination }) {
       <MissionDialog {...dialogProps} {...missionExtras(selectedMission)} language={language} onLanguageChange={changeLanguage} />
       <div className={styles.globe}>
         <div ref={host} className={styles.globeCanvas} aria-hidden="true" />
-        {world === 'space' && status.earth !== 'ready' &&
-          <span className={`${museumStyles.galaxyPlaceholder} ${styles.globeGalaxyPlaceholder}`} aria-hidden="true" />}
         <div ref={rotation} className={styles.globeDrag} tabIndex={0} role="group" aria-label={names[world]}
           aria-description={labels.drag}
           onKeyDown={(event) => {

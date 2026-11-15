@@ -1208,15 +1208,6 @@
   background: none;
 }
 
-.galaxyPlaceholder {
-  position: absolute;
-  inset: 8%;
-  border-radius: 50%;
-  background: #080910 url('/planets/galaxy.webp') center / contain no-repeat;
-  transform: rotate(-19deg) scaleY(.72);
-  pointer-events: none;
-}
-
 .missionStatus {
   display: inline-flex;
   width: fit-content;

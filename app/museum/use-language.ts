@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Language } from './languages';
+import { defaultLanguage, type Language } from './languages';
 
 export function useLanguage() {
-  const [language, setLanguage] = useState<Language>('ru');
+  const [language, setLanguage] = useState<Language>(defaultLanguage);
 
   useEffect(() => {
     try {
@@ -16,7 +16,7 @@ export function useLanguage() {
     } catch {
       // The selector still works with storage disabled.
     }
-    return () => { document.documentElement.lang = 'ru'; };
+    return () => { document.documentElement.lang = defaultLanguage; };
   }, []);
 
   function changeLanguage(next: Language) {
