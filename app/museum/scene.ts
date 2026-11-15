@@ -163,6 +163,17 @@ export function mountScene(
   const models: Partial<Record<World, THREE.Group>> = {};
   const loading = new Set<World>();
   const loader = new GLTFLoader();
+  if (navigator.vendor === 'Apple Computer, Inc.') {
+    loader.register((parser) => {
+      // Use the browser's image decoder for embedded textures on Safari.
+      if (parser.textureLoader instanceof THREE.ImageBitmapLoader) {
+        parser.textureLoader = new THREE.TextureLoader(parser.options.manager)
+          .setCrossOrigin(loader.crossOrigin)
+          .setRequestHeader(loader.requestHeader);
+      }
+      return { name: 'SafariTextureLoader' };
+    });
+  }
   const draco = new DRACOLoader().setDecoderPath('/draco/').setWorkerLimit(1);
 
   const requests = new AbortController();
@@ -248,8 +259,9 @@ export function mountScene(
   function ensure(world: World) {
     if (loading.has(world)) return;
     loading.add(world);
-    void load(world).catch(() => {
+    void load(world).catch((error: unknown) => {
       if (!disposed) {
+        console.error(`[TMAS] Could not load the ${world} model`, error);
         onStatus(world, 'error');
         if (world === 'earth' && input.hub) onStatus('space', 'error');
       }
